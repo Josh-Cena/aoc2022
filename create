@@ -1,0 +1,11 @@
+#!/opt/homebrew/bin/bash
+
+if [ -d "Day$1" ]; then
+    echo "Day$1 already exists"
+    exit 1
+fi
+
+mkdir "Day$1"
+cp "template.hs" "Day$1/main.hs"
+touch "Day$1/input.txt"
+touch "Day$1/test.txt"
