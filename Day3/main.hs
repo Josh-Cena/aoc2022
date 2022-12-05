@@ -1,10 +1,7 @@
 import Data.Char
-import Data.Foldable
-import Data.Sequence qualified as Seq
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import System.Environment
-import System.IO
 
 main = do
   args <- getArgs

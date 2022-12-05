@@ -2,7 +2,6 @@ import Data.List
 import Data.Ord
 import Data.Text qualified as T
 import System.Environment
-import System.IO
 
 main = do
   args <- getArgs
