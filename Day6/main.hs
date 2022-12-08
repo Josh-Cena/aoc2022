@@ -4,7 +4,7 @@ import System.Environment
 
 main = do
   args <- getArgs
-  input <- T.pack <$> (readFile (args !! 0))
+  input <- T.pack <$> (readFile $ head args)
   print (roll 4 0 input (T.take 4 $ input))
   print (roll 14 0 input (T.take 4 $ input))
 

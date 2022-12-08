@@ -4,7 +4,7 @@ import System.Environment
 
 main = do
   args <- getArgs
-  input <- T.pack <$> (readFile (args !! 0))
+  input <- T.pack <$> (readFile $ head args)
   let games = map (\cur -> ((T.head (cur !! 0)), (T.head (cur !! 1)))) $ map (T.splitOn (T.pack " ")) $ (T.lines input)
 
   print (sum $ map score $ games)

@@ -21,7 +21,7 @@ type TraverseState = (Dirent, [T.Text])
 
 main = do
   args <- getArgs
-  input <- T.pack <$> (readFile (args !! 0))
+  input <- T.pack <$> (readFile $ head args)
   let logs = T.splitOn (T.pack "\n$ ") (T.drop 2 input)
   let (dir, path) = foldl' (flip processCmd) (Directory Map.empty, []) logs
   let dirSizes = sizes dir

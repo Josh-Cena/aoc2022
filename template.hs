@@ -3,5 +3,5 @@ import System.Environment
 
 main = do
   args <- getArgs
-  input <- T.pack <$> (readFile (args !! 0))
+  input <- T.pack <$> (readFile $ head args)
   print input

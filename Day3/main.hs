@@ -5,7 +5,7 @@ import System.Environment
 
 main = do
   args <- getArgs
-  input <- T.pack <$> (readFile (args !! 0))
+  input <- T.pack <$> (readFile $ head args)
   let rucksacks = T.lines input
   let compartments = map (\line -> T.splitAt (div (T.length line) 2) line) rucksacks
   let compCommons = map (\(a, b) -> commonPriority (textToSet a) (textToSet b)) compartments

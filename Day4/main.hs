@@ -4,7 +4,7 @@ import System.IO
 
 main = do
   args <- getArgs
-  input <- T.pack <$> (readFile (args !! 0))
+  input <- T.pack <$> (readFile $ head args)
   let lines = map (map parseRange . (T.splitOn (T.pack ","))) $ T.lines $ input
   print (length $ filter (\[r1, r2] -> contain r1 r2) $ lines)
   print (length $ filter (\[r1, r2] -> overlap r1 r2) $ lines)

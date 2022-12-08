@@ -5,16 +5,16 @@ import System.Environment
 
 main = do
   args <- getArgs
-  input <- T.pack <$> (readFile (args !! 0))
+  input <- T.pack <$> (readFile $ head args)
   let [startInput, movesInput] = T.splitOn (T.pack "\n\n") input
   let rows = map parseRow $ init $ T.lines $ startInput
   let columns = map (dropWhile isSpace) $ transpose $ rows
   let moves = map parseMove $ T.lines movesInput
 
-  let res = foldl (makeMove reverse) columns moves
+  let res = foldl' (makeMove reverse) columns moves
   print (tops res)
 
-  let res2 = foldl (makeMove id) columns moves
+  let res2 = foldl' (makeMove id) columns moves
   print (tops res2)
 
 parseRow :: T.Text -> [Char]

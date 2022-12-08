@@ -5,7 +5,7 @@ import System.Environment
 
 main = do
   args <- getArgs
-  input <- T.pack <$> (readFile (args !! 0))
+  input <- T.pack <$> (readFile $ head args)
   let texts = map T.lines (T.splitOn (T.pack "\n\n") input)
   let sums = map sumChunk texts
   let tops = sortOn Down sums
