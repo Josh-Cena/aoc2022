@@ -10,9 +10,11 @@ if [ -f "$PWD/Day$1/test2.txt" ]; then
   echo "$ans2"
 fi
 
-echo -e "\nReal:"
-ans3=$(runhaskell "$PWD/Day$1/main.hs" "$PWD/Day$1/input.txt")
-echo "$ans3"
+if [ "$2" != "-t" ]; then
+  echo -e "\nReal:"
+  ans3=$(runhaskell "$PWD/Day$1/main.hs" "$PWD/Day$1/input.txt")
+  echo "$ans3"
+fi
 
 [[ $ans2 ]] && ans="$ans1\n$ans2\n$ans3" || ans="$ans1\n$ans3"
 
