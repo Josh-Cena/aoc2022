@@ -3,5 +3,10 @@
 echo "Test:"
 runhaskell "$PWD/Day$1/main.hs" "$PWD/Day$1/test.txt"
 
+if [ -f "$PWD/Day$1/test2.txt" ]; then
+  echo -e "\nTest2:"
+  runhaskell "$PWD/Day$1/main.hs" "$PWD/Day$1/test2.txt"
+fi
+
 echo -e "\nReal:"
 runhaskell "$PWD/Day$1/main.hs" "$PWD/Day$1/input.txt"
