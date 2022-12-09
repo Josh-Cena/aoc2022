@@ -5,10 +5,10 @@ import System.Environment
 main = do
   args <- getArgs
   input <- T.pack <$> (readFile $ head args)
-  let games = map (\cur -> ((T.head (cur !! 0)), (T.head (cur !! 1)))) $ map (T.splitOn (T.pack " ")) $ (T.lines input)
+  let games = map (\cur -> ((T.head (cur !! 0)), (T.head (cur !! 1)))) $ map (T.splitOn (T.pack " ")) (T.lines input)
 
-  print (sum $ map score $ games)
-  print (sum $ map (\g -> score (fst g, shape g)) $ games)
+  print (sum $ map score games)
+  print (sum $ map (\g -> score (fst g, shape g)) games)
 
 outcomes :: [(Char, Char, Int)]
 outcomes =

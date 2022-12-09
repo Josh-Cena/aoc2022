@@ -2,7 +2,6 @@ import Data.List
 import Data.Ord
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import Debug.Trace
 import System.Environment
 
 main = do

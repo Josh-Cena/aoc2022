@@ -37,9 +37,9 @@ printMaybe a = case a of
 processCmd :: T.Text -> TraverseState -> TraverseState
 processCmd log
   | command == "cd" = cd (T.drop 3 log)
-  | command == "ls" = ls (tail $ T.lines $ log)
+  | command == "ls" = ls (tail $ T.lines log)
   where
-    command = T.unpack $ T.take 2 $ log
+    command = T.unpack $ T.take 2 log
 
 cd :: T.Text -> TraverseState -> TraverseState
 cd dir (tree, path)
@@ -52,7 +52,7 @@ data ParsedEntry = FileEntry T.Text Int | DirEntry T.Text deriving (Show)
 ls :: [T.Text] -> TraverseState -> TraverseState
 ls logs (tree, path) = (newTree, path)
   where
-    newTree = updateSubtree (reverse path) tree $ Directory $ addEntries $ getDirents path $ tree
+    newTree = updateSubtree (reverse path) tree $ Directory $ addEntries $ getDirents path tree
 
     getDirents :: [T.Text] -> Dirent -> Map.Map T.Text Dirent
     getDirents [] (Directory root) = root
@@ -63,12 +63,12 @@ ls logs (tree, path) = (newTree, path)
     parseLsLog :: T.Text -> ParsedEntry
     parseLsLog log
       | size == T.pack "dir" = DirEntry name
-      | otherwise = FileEntry name (read $ T.unpack $ size)
+      | otherwise = FileEntry name (read $ T.unpack size)
       where
         [size, name] = T.splitOn (T.pack " ") log
 
     addEntries :: Map.Map T.Text Dirent -> Map.Map T.Text Dirent
-    addEntries dirents = foldr addEntry dirents $ map parseLsLog $ logs
+    addEntries dirents = foldr addEntry dirents $ map parseLsLog logs
       where
         addEntry (FileEntry name size) dirents = Map.insert name (File size) dirents
         addEntry (DirEntry name) dirents = case Map.lookup name dirents of

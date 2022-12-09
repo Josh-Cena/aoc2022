@@ -7,8 +7,8 @@ main = do
   args <- getArgs
   input <- T.pack <$> (readFile $ head args)
   let [startInput, movesInput] = T.splitOn (T.pack "\n\n") input
-  let rows = map parseRow $ init $ T.lines $ startInput
-  let columns = map (dropWhile isSpace) $ transpose $ rows
+  let rows = map parseRow $ init $ T.lines startInput
+  let columns = map (dropWhile isSpace) $ transpose rows
   let moves = map parseMove $ T.lines movesInput
 
   let res = foldl' (makeMove reverse) columns moves
@@ -20,7 +20,7 @@ main = do
 parseRow :: T.Text -> [Char]
 parseRow c
   | T.null c = ""
-  | otherwise = (T.head $ T.tail $ c) : parseRow (T.drop 4 c)
+  | otherwise = (T.head $ T.tail c) : parseRow (T.drop 4 c)
 
 parseMove :: T.Text -> (Int, Int, Int)
 parseMove m = (fst, snd, trd)

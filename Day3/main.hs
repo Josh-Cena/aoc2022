@@ -11,7 +11,7 @@ main = do
   let compCommons = map (\(a, b) -> commonPriority (textToSet a) (textToSet b)) compartments
   print (sum compCommons)
 
-  let groups = map (map textToSet) $ chunksOf 3 $ rucksacks
+  let groups = map (map textToSet) $ chunksOf 3 rucksacks
   let groupCommons = map (\[a, b, c] -> commonPriority a $ Set.intersection b c) groups
   print (sum groupCommons)
 
