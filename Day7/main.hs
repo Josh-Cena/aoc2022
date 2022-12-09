@@ -26,8 +26,8 @@ main = do
   let (dir, path) = foldl' (flip processCmd) (Directory Map.empty, []) logs
   let dirSizes = sizes dir
   let total = head dirSizes
-  print (sum $ filter (<= 100000) dirSizes)
-  printMaybe (find (>= total - 40000000) (sort dirSizes))
+  print $ sum $ filter (<= 100000) dirSizes
+  printMaybe $ find (>= total - 40000000) (sort dirSizes)
 
 printMaybe :: Show a => Maybe a -> IO ()
 printMaybe a = case a of

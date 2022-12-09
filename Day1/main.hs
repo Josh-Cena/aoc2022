@@ -10,8 +10,8 @@ main = do
   let sums = map sumChunk texts
   let tops = sortOn Down sums
 
-  print (tops !! 0)
-  print (tops !! 0 + tops !! 1 + tops !! 2)
+  print $ tops !! 0
+  print $ tops !! 0 + tops !! 1 + tops !! 2
 
 sumChunk :: [T.Text] -> Int
 sumChunk = sum . map (read . T.unpack)

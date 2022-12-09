@@ -12,10 +12,10 @@ main = do
   let moves = map parseMove $ T.lines movesInput
 
   let res = foldl' (makeMove reverse) columns moves
-  print (tops res)
+  print $ tops res
 
   let res2 = foldl' (makeMove id) columns moves
-  print (tops res2)
+  print $ tops res2
 
 parseRow :: T.Text -> [Char]
 parseRow c

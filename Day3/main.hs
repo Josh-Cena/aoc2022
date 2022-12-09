@@ -9,11 +9,11 @@ main = do
   let rucksacks = T.lines input
   let compartments = map (\line -> T.splitAt (div (T.length line) 2) line) rucksacks
   let compCommons = map (\(a, b) -> commonPriority (textToSet a) (textToSet b)) compartments
-  print (sum compCommons)
+  print $ sum compCommons
 
   let groups = map (map textToSet) $ chunksOf 3 rucksacks
   let groupCommons = map (\[a, b, c] -> commonPriority a $ Set.intersection b c) groups
-  print (sum groupCommons)
+  print $ sum groupCommons
 
 chunksOf :: Int -> [a] -> [[a]]
 chunksOf _ [] = []

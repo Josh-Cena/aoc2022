@@ -9,10 +9,10 @@ main = do
   input <- T.pack <$> (readFile $ head args)
   let moves = map parseMove $ T.lines input
   let (chain, set) = foldl' makeMove (replicate 2 (0, 0), Set.empty) moves
-  print (Set.size set)
+  print $ Set.size set
 
   let (chain2, set2) = foldl' makeMove (replicate 10 (0, 0), Set.empty) moves
-  print (Set.size set2)
+  print $ Set.size set2
 
 parseMove :: T.Text -> (Char, Int)
 parseMove t = (T.head fst, read $ T.unpack snd)

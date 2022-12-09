@@ -1,7 +1,6 @@
 import Data.Char
 import Data.List
 import Data.Map qualified as Map
-import Data.Set qualified as Set
 import Data.Text qualified as T
 import Data.Tuple
 import System.Environment
@@ -21,8 +20,8 @@ main = do
           in fold Map.empty indices'
   let blockerMaps = map recordBlocker [(0, 1), (0, -1), (1, 0), (-1, 0)]
   let visitMaps cb = foldr (cb blockerMaps (rowCnt, colCnt)) 0 indices
-  print (visitMaps countVisible)
-  print (visitMaps findMax)
+  print $ visitMaps countVisible
+  print $ visitMaps findMax
 
 addGridIndices :: [[a]] -> [[((Int, Int), a)]]
 addGridIndices grid = grid''
