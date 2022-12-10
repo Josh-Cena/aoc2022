@@ -1,7 +1,6 @@
 import Data.Text qualified as T
-import System.Environment
+import Utils
 
 main = do
-  args <- getArgs
-  input <- T.pack <$> (readFile $ head args)
+  input <- getInput
   print $ input

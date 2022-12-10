@@ -1,7 +1,7 @@
 import Data.List
 import Data.Map qualified as Map
 import Data.Text qualified as T
-import System.Environment
+import Utils
 
 data Dirent = File Int | Directory (Map.Map T.Text Dirent)
 
@@ -20,8 +20,7 @@ instance Show Dirent where
 type TraverseState = (Dirent, [T.Text])
 
 main = do
-  args <- getArgs
-  input <- T.pack <$> (readFile $ head args)
+  input <- getInput
   let logs = T.splitOn (T.pack "\n$ ") (T.drop 2 input)
   let (dir, path) = foldl' (flip processCmd) (Directory Map.empty, []) logs
   let dirSizes = sizes dir
@@ -63,9 +62,9 @@ ls logs (tree, path) = (newTree, path)
     parseLsLog :: T.Text -> ParsedEntry
     parseLsLog log
       | size == T.pack "dir" = DirEntry name
-      | otherwise = FileEntry name (read $ T.unpack size)
+      | otherwise = FileEntry name (readT size)
       where
-        [size, name] = T.splitOn (T.pack " ") log
+        [size, name] = T.words log
 
     addEntries :: Map.Map T.Text Dirent -> Map.Map T.Text Dirent
     addEntries dirents = foldr addEntry dirents $ map parseLsLog logs
@@ -92,8 +91,8 @@ sizes (Directory subDir) = (subdirsSize + filesSize) : (concat allSizes)
   where
     (files, subdirs) = partition isFile $ Map.elems subDir
     allSizes = map sizes subdirs
-    subdirsSize = sum $ map head allSizes
-    filesSize = sum $ map (\(File size) -> size) files
+    subdirsSize = sumMap head allSizes
+    filesSize = sumMap (\(File size) -> size) files
 
     isFile :: Dirent -> Bool
     isFile (File _) = True

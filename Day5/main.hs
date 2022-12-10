@@ -1,11 +1,10 @@
 import Data.Char
 import Data.List
 import Data.Text qualified as T
-import System.Environment
+import Utils
 
 main = do
-  args <- getArgs
-  input <- T.pack <$> (readFile $ head args)
+  input <- getInput
   let [startInput, movesInput] = T.splitOn (T.pack "\n\n") input
   let rows = map parseRow $ init $ T.lines startInput
   let columns = map (dropWhile isSpace) $ transpose rows
@@ -25,7 +24,7 @@ parseRow c
 parseMove :: T.Text -> (Int, Int, Int)
 parseMove m = (fst, snd, trd)
   where
-    [_, fst, _, snd, _, trd] = map (read . T.unpack) (T.splitOn (T.pack " ") m)
+    [_, fst, _, snd, _, trd] = map readT $ T.words m
 
 makeMove :: ([Char] -> [Char]) -> [[Char]] -> (Int, Int, Int) -> [[Char]]
 makeMove process columns (cnt, from, to) = before ++ col1' : middle ++ col2' : after

@@ -1,23 +1,16 @@
 import Data.Char
 import Data.Set qualified as Set
 import Data.Text qualified as T
-import System.Environment
+import Utils
 
 main = do
-  args <- getArgs
-  input <- T.pack <$> (readFile $ head args)
+  input <- getInput
   let rucksacks = T.lines input
-  let compartments = map (\line -> T.splitAt (div (T.length line) 2) line) rucksacks
-  let compCommons = map (\(a, b) -> commonPriority (textToSet a) (textToSet b)) compartments
-  print $ sum compCommons
+  let compartments = map (\line -> T.splitAt ((T.length line) `div` 2) line) rucksacks
+  print $ sumMap (\(a, b) -> commonPriority (textToSet a) (textToSet b)) compartments
 
   let groups = map (map textToSet) $ chunksOf 3 rucksacks
-  let groupCommons = map (\[a, b, c] -> commonPriority a $ Set.intersection b c) groups
-  print $ sum groupCommons
-
-chunksOf :: Int -> [a] -> [[a]]
-chunksOf _ [] = []
-chunksOf n xs = take n xs : chunksOf n (drop n xs)
+  print $ sumMap (\[a, b, c] -> commonPriority a $ Set.intersection b c) groups
 
 priority :: Char -> Int
 priority c

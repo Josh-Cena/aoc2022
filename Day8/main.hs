@@ -3,12 +3,11 @@ import Data.List
 import Data.Map qualified as Map
 import Data.Text qualified as T
 import Data.Tuple
-import System.Environment
+import Utils
 
 main = do
-  args <- getArgs
-  input <- T.pack <$> (readFile $ head args)
-  let matrix = addGridIndices $ map ((map digitToInt) . T.unpack) $ T.lines input
+  input <- getInput
+  let matrix = addGridIndices $ map (map digitToInt . T.unpack) $ T.lines input
   let rowCnt = length matrix
   let colCnt = length $ head matrix
   let indices = [(r, c) | r <- [1 .. rowCnt], c <- [1 .. colCnt]]
@@ -62,12 +61,3 @@ findMax blockerMaps dims (x, y) = max score
       where
         (blockerX, blockerY) = map ! (x, y)
         rawScore = max (abs (blockerY - y)) (abs (blockerX - x))
-
-(!) :: (Ord k, Show k, Show a) => Map.Map k a -> k -> a
-map ! key = case Map.lookup key map of
-  Just value -> value
-  Nothing -> error $ "Key not found: " ++ show key ++ " in " ++ show map
-
-int :: Bool -> Int
-int True = 1
-int False = 0

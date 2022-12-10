@@ -1,19 +1,16 @@
 import Data.Text qualified as T
-import System.Environment
-import System.IO
+import GHC.Utils.Misc
+import Utils
 
 main = do
-  args <- getArgs
-  input <- T.pack <$> (readFile $ head args)
-  let lines = map (map parseRange . (T.splitOn (T.pack ","))) $ T.lines input
-  print $ length $ filter contain lines
-  print $ length $ filter overlap lines
+  input <- getInput
+  let lines = map (map parseRange . (T.split (== ','))) $ T.lines input
+  print $ count contain lines
+  print $ count overlap lines
 
 parseRange :: T.Text -> (Int, Int)
-parseRange t = (s, e) where [s, e] = map (read . T.unpack) (T.splitOn (T.pack "-") t)
+parseRange t = (s, e) where [s, e] = map readT $ T.split (== '-') t
 
-contain :: [(Int, Int)] -> Bool
+contain, overlap :: [(Int, Int)] -> Bool
 contain [(a1, b1), (a2, b2)] = (a1 <= a2 && b1 >= b2) || (a1 >= a2 && b1 <= b2)
-
-overlap :: [(Int, Int)] -> Bool
 overlap [(a1, b1), (a2, b2)] = b1 >= a2 && b2 >= a1
