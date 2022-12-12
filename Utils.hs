@@ -1,4 +1,4 @@
-module Utils ((|+|), (|-|), (!), chunksOf, sumMap, int, unsnoc, getInput, readT) where
+module Utils ((|+|), (|-|), (!), chunksOf, sumMap, int, unsnoc, getInput, readT, addGridIndices) where
 
 import Data.Map qualified as Map
 import Data.Text qualified as T
@@ -37,3 +37,10 @@ getInput = do
 
 readT :: Read a => T.Text -> a
 readT = read . T.unpack
+
+addGridIndices :: [[a]] -> [[((Int, Int), a)]]
+addGridIndices grid = grid''
+  where
+    grid' = addIndices $ map addIndices grid
+    grid'' = map (\(r, row) -> map (\(c, val) -> ((r, c), val)) row) grid'
+    addIndices = zip [1 ..]

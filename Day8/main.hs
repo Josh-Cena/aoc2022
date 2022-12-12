@@ -22,13 +22,6 @@ main = do
   print $ visitMaps countVisible
   print $ visitMaps findMax
 
-addGridIndices :: [[a]] -> [[((Int, Int), a)]]
-addGridIndices grid = grid''
-  where
-    grid' = addIndices $ map addIndices grid
-    grid'' = map (\(r, row) -> map (\(c, val) -> ((r, c), val)) row) grid'
-    addIndices = zip [1 ..]
-
 addBoundaries :: Int -> Int -> Map.Map (Int, Int) Int -> Map.Map (Int, Int) Int
 addBoundaries rowCnt colCnt map = foldr (flip Map.insert 10) map boundaries
   where
