@@ -1,6 +1,8 @@
 import Data.List
 import Data.Ord
+import Data.Set (Set)
 import Data.Set qualified as Set
+import Data.Text (Text)
 import Data.Text qualified as T
 import Utils
 
@@ -13,12 +15,12 @@ main = do
   let (chain2, set2) = foldl' makeMove (replicate 10 (0, 0), Set.empty) moves
   print $ Set.size set2
 
-parseMove :: T.Text -> (Char, Int)
+parseMove :: Text -> (Char, Int)
 parseMove t = (T.head fst, readT snd)
   where
     [fst, snd] = T.words t
 
-type State = ([(Int, Int)], Set.Set (Int, Int))
+type State = ([(Int, Int)], Set (Int, Int))
 
 makeMove :: State -> (Char, Int) -> State
 makeMove s (_, 0) = s

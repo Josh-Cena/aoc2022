@@ -1,5 +1,6 @@
 import Data.Char
 import Data.List
+import Data.Text (Text)
 import Data.Text qualified as T
 import Utils
 
@@ -16,12 +17,12 @@ main = do
   let res2 = foldl' (makeMove id) columns moves
   print $ tops res2
 
-parseRow :: T.Text -> [Char]
+parseRow :: Text -> [Char]
 parseRow c
   | T.null c = ""
   | otherwise = (T.head $ T.tail c) : parseRow (T.drop 4 c)
 
-parseMove :: T.Text -> (Int, Int, Int)
+parseMove :: Text -> (Int, Int, Int)
 parseMove m = (fst, snd, trd)
   where
     [_, fst, _, snd, _, trd] = map readT $ T.words m

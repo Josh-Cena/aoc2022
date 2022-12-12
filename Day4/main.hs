@@ -1,3 +1,4 @@
+import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.Utils.Misc
 import Utils
@@ -8,7 +9,7 @@ main = do
   print $ count contain lines
   print $ count overlap lines
 
-parseRange :: T.Text -> (Int, Int)
+parseRange :: Text -> (Int, Int)
 parseRange t = (s, e) where [s, e] = map readT $ T.split (== '-') t
 
 contain, overlap :: [(Int, Int)] -> Bool

@@ -1,6 +1,8 @@
 module Utils ((|+|), (|-|), (!), chunksOf, sumMap, int, unsnoc, getInput, readT, addGridIndices) where
 
+import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Text (Text)
 import Data.Text qualified as T
 import System.Environment
 
@@ -10,7 +12,7 @@ import System.Environment
 (|-|) :: (Num a) => (a, a) -> (a, a) -> (a, a)
 (a, b) |-| (c, d) = (a - c, b - d)
 
-(!) :: (Ord k, Show k, Show a) => Map.Map k a -> k -> a
+(!) :: (Ord k, Show k, Show a) => Map k a -> k -> a
 map ! key = case Map.lookup key map of
   Just value -> value
   Nothing -> error $ "Key not found: " ++ show key ++ " in " ++ show map
@@ -30,12 +32,12 @@ unsnoc :: [a] -> ([a], a)
 unsnoc [x] = ([], x)
 unsnoc (x : xs) = (x : xs', last) where (xs', last) = unsnoc xs
 
-getInput :: IO T.Text
+getInput :: IO Text
 getInput = do
   args <- getArgs
   T.pack <$> (readFile $ head args)
 
-readT :: Read a => T.Text -> a
+readT :: Read a => Text -> a
 readT = read . T.unpack
 
 addGridIndices :: [[a]] -> [[((Int, Int), a)]]

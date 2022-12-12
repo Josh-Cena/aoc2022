@@ -1,8 +1,9 @@
 import Data.Char
-import Data.List
+import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe
+import Data.Sequence (Seq, (><))
 import Data.Sequence qualified as Seq
+import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Utils
@@ -17,7 +18,7 @@ main = do
   let shortest = bfs matrix starts
   print $ shortest ! end
 
-type Acc = ((Int, Int), (Int, Int), Map.Map (Int, Int) Int, [(Int, Int)])
+type Acc = ((Int, Int), (Int, Int), Map (Int, Int) Int, [(Int, Int)])
 
 analyzePoint :: ((Int, Int), Char) -> Acc -> Acc
 analyzePoint (cur, curV) (start, end, matrix, starts) = case curV of
@@ -28,11 +29,11 @@ analyzePoint (cur, curV) (start, end, matrix, starts) = case curV of
   where
     matrixAdd v = Map.insert cur (ord v) matrix
 
-bfs :: Map.Map (Int, Int) Int -> [(Int, Int)] -> Map.Map (Int, Int) Int
+bfs :: Map (Int, Int) Int -> [(Int, Int)] -> Map (Int, Int) Int
 bfs matrix starts =
   runQueue matrix (Seq.fromList starts, Set.fromList starts) $ Map.fromList $ map (,0) starts
 
-runQueue :: Map.Map (Int, Int) Int -> (Seq.Seq (Int, Int), Set.Set (Int, Int)) -> Map.Map (Int, Int) Int -> Map.Map (Int, Int) Int
+runQueue :: Map (Int, Int) Int -> (Seq (Int, Int), Set (Int, Int)) -> Map (Int, Int) Int -> Map (Int, Int) Int
 runQueue matrix (queue, seen) shortest
   | Seq.null queue = shortest
   | otherwise = runQueue matrix (queue', seen') shortest'
@@ -43,7 +44,7 @@ runQueue matrix (queue, seen) shortest
     statuses = zip neighbors $ map getStatus neighbors
     visitedNeighbors = filter (>= 0) $ map snd statuses
     toVisitNeighbors = map fst $ filter ((== -1) . snd) statuses
-    queue' = Seq.drop 1 queue Seq.>< Seq.fromList toVisitNeighbors
+    queue' = Seq.drop 1 queue >< Seq.fromList toVisitNeighbors
     seen' = Set.union seen $ Set.fromList toVisitNeighbors
     minDist = minimum visitedNeighbors + 1
     shortest' = Map.insertWith (flip const) cur minDist shortest

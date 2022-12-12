@@ -1,4 +1,5 @@
 import Data.Char
+import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text qualified as T
 import Utils
@@ -21,5 +22,5 @@ priority c
 
 textToSet = Set.fromList . T.unpack
 
-commonPriority :: Set.Set Char -> Set.Set Char -> Int
+commonPriority :: Set Char -> Set Char -> Int
 commonPriority a b = priority $ Set.elemAt 0 $ Set.intersection a b

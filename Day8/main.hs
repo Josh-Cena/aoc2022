@@ -1,5 +1,6 @@
 import Data.Char
 import Data.List
+import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text qualified as T
 import Data.Tuple
@@ -22,7 +23,7 @@ main = do
   print $ visitMaps countVisible
   print $ visitMaps findMax
 
-addBoundaries :: Int -> Int -> Map.Map (Int, Int) Int -> Map.Map (Int, Int) Int
+addBoundaries :: Int -> Int -> Map (Int, Int) Int -> Map (Int, Int) Int
 addBoundaries rowCnt colCnt map = foldr (flip Map.insert 10) map boundaries
   where
     boundaries =
@@ -32,7 +33,7 @@ addBoundaries rowCnt colCnt map = foldr (flip Map.insert 10) map boundaries
 isBoundary :: (Int, Int) -> (Int, Int) -> Bool
 isBoundary (rowCnt, colCnt) (r, c) = r == 0 || r == rowCnt + 1 || c == 0 || c == colCnt + 1
 
-addBlocker :: Map.Map (Int, Int) Int -> (Int, Int) -> (Int, Int) -> Map.Map (Int, Int) (Int, Int) -> Map.Map (Int, Int) (Int, Int)
+addBlocker :: Map (Int, Int) Int -> (Int, Int) -> (Int, Int) -> Map (Int, Int) (Int, Int) -> Map (Int, Int) (Int, Int)
 addBlocker grid (dx, dy) pos = Map.insert pos blockerPos
   where
     curValue = grid ! pos
@@ -41,12 +42,12 @@ addBlocker grid (dx, dy) pos = Map.insert pos blockerPos
       Just p -> p
       Nothing -> error "No blocker found"
 
-countVisible :: [Map.Map (Int, Int) (Int, Int)] -> (Int, Int) -> (Int, Int) -> Int -> Int
+countVisible :: [Map (Int, Int) (Int, Int)] -> (Int, Int) -> (Int, Int) -> Int -> Int
 countVisible blockerMaps dims pos = (+) (int isVisible)
   where
     isVisible = any (\map -> isBoundary dims (map ! pos)) blockerMaps
 
-findMax :: [Map.Map (Int, Int) (Int, Int)] -> (Int, Int) -> (Int, Int) -> Int -> Int
+findMax :: [Map (Int, Int) (Int, Int)] -> (Int, Int) -> (Int, Int) -> Int -> Int
 findMax blockerMaps dims (x, y) = max score
   where
     score = foldr ((*) . scoreOfDir) 1 blockerMaps

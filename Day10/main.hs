@@ -1,5 +1,7 @@
 import Data.List
+import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Text (Text)
 import Data.Text qualified as T
 import Utils
 
@@ -12,14 +14,14 @@ main = do
   let screen = unlines $ chunksOf 40 $ map (\t -> draw t (history ! t)) [1 .. 240]
   putStrLn screen
 
-parseCycles :: [T.Text] -> [(Int, Int)]
+parseCycles :: [Text] -> [(Int, Int)]
 parseCycles [] = []
 parseCycles (line : xs)
   | line == (T.pack "noop") = (1, 0) : parseCycles xs
   | otherwise = (2, readT $ T.words line !! 1) : parseCycles xs
 
 -- state = value **during** the xth cycle
-updateRegister :: ((Int, Int), Map.Map Int Int) -> (Int, Int) -> ((Int, Int), Map.Map Int Int)
+updateRegister :: ((Int, Int), Map Int Int) -> (Int, Int) -> ((Int, Int), Map Int Int)
 updateRegister ((time, val), history) (dur, delta) = ((time', val'), history')
   where
     time' = time + dur
