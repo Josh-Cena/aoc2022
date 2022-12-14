@@ -19,12 +19,17 @@ for i in ${tests[@]}; do
     else
       ans="$ans1$n$ans3"
     fi
-    saved=$(cat "$PWD/Day$i/answer.txt")
-    if [ "$ans" != "$saved" ]; then
-      echo -e "Day $i incorrect:\n$(diff -u <(echo -e "$ans") <(echo -e "$saved"))"
-      flag=1
+    if [ -f "$PWD/Day$i/answer.txt" ]; then
+      saved=$(cat "$PWD/Day$i/answer.txt")
+      if [ "$ans" != "$saved" ]; then
+        echo -e "Day $i incorrect:\n$(diff -u <(echo -e "$ans") <(echo -e "$saved"))"
+        flag=1
+      else
+        echo "Day $i correct"
+      fi
     else
-      echo "Day $i correct"
+      echo "Day $i has no answer. Forgot to run './run $i -s'?"
+      flag=1
     fi
   fi
 done
