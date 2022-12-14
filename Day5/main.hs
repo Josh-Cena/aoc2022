@@ -6,7 +6,7 @@ import Utils
 
 main = do
   input <- getInput
-  let [startInput, movesInput] = T.splitOn (T.pack "\n\n") input
+  let [startInput, movesInput] = splitT "\n\n" input
   let rows = map parseRow $ init $ T.lines startInput
   let columns = map (dropWhile isSpace) $ transpose rows
   let moves = map parseMove $ T.lines movesInput

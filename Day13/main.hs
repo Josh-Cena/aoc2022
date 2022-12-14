@@ -21,7 +21,7 @@ instance Ord TreeNode where
 
 main = do
   input <- getInput
-  let pairs = map (map parseList) $ map T.lines $ T.splitOn (T.pack "\n\n") input
+  let pairs = map (map parseList) $ map T.lines $ splitT "\n\n" input
   let rightOrder = map (+ 1) $ findIndices (\[a, b] -> a < b) pairs
   print $ sum rightOrder
 

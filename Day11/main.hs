@@ -11,7 +11,7 @@ import Utils
 
 main = do
   input <- getInput
-  let monkeys = Map.fromList $ map parseMonkey $ T.splitOn (T.pack "\n\n") input
+  let monkeys = Map.fromList $ map parseMonkey $ splitT "\n\n" input
   let monkeys' = passAround 20 3 monkeys
   print $ monkeyBusiness monkeys'
 
@@ -37,7 +37,7 @@ parseMonkey text =
   where
     [l1, l2, l3, l4, l5, l6] = T.lines text
     number = digitToInt (T.unpack l1 !! 7)
-    items = reverse $ map readT $ T.splitOn (T.pack ", ") $ dropPrefix "  Starting items: " l2
+    items = reverse $ map readT $ splitT ", " $ dropPrefix "  Starting items: " l2
     operation = case T.unpack $ dropPrefix "  Operation: new = old " l3 of
       "* old" -> (^ 2)
       '*' : num -> (* (read $ tail num))

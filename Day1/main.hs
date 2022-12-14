@@ -5,7 +5,7 @@ import Utils
 
 main = do
   input <- getInput
-  let texts = map T.lines $ T.splitOn (T.pack "\n\n") input
+  let texts = map T.lines $ splitT "\n\n" input
   let sums = map (sumMap (read . T.unpack)) texts
   let tops = sortOn Down sums
 

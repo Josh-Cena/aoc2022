@@ -23,7 +23,7 @@ type TraverseState = (Dirent, [Text])
 
 main = do
   input <- getInput
-  let logs = T.splitOn (T.pack "\n$ ") (T.drop 2 input)
+  let logs = splitT "\n$ " $ T.drop 2 input
   let (dir, path) = foldl' (flip processCmd) (Directory Map.empty, []) logs
   let dirSizes = sizes dir
   let total = head dirSizes
