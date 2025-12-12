@@ -1,4 +1,4 @@
-module Utils ((|+|), (|-|), (!), chunksOf, sumMap, int, unsnoc, getInput, readT, splitT, addGridIndices) where
+module Utils ((|+|), (|-|), (!), chunksOf, sumMap, int, unsnoc, readT, splitT, addGridIndices) where
 
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -31,11 +31,6 @@ int False = 0
 unsnoc :: [a] -> ([a], a)
 unsnoc [x] = ([], x)
 unsnoc (x : xs) = (x : xs', last) where (xs', last) = unsnoc xs
-
-getInput :: IO Text
-getInput = do
-  args <- getArgs
-  T.pack <$> (readFile $ head args)
 
 readT :: Read a => Text -> a
 readT = read . T.unpack

@@ -1,3 +1,4 @@
+module Day13(solve1, solve2) where
 import Data.List
 import Data.Maybe
 import Data.Text (Text)
@@ -19,12 +20,15 @@ instance Ord TreeNode where
   compare la@(Leaf a) bb@(Branch b) = compare (Branch [la]) bb
   compare bb@(Branch _) la@(Leaf _) = compare bb (Branch [la])
 
-main = do
-  input <- getInput
-  let pairs = map (map parseList) $ map T.lines $ splitT "\n\n" input
+solve1 :: [Text] -> IO ()
+solve1 input = do
+  let pairs = map (map parseList) $ map T.lines $ splitT "\n\n" $ T.unlines input
   let rightOrder = map (+ 1) $ findIndices (\[a, b] -> a < b) pairs
   print $ sum rightOrder
 
+solve2 :: [Text] -> IO ()
+solve2 input = do
+  let pairs = map (map parseList) $ map T.lines $ splitT "\n\n" $ T.unlines input
   let d1 = Branch [Branch [Leaf 2]]
   let d2 = Branch [Branch [Leaf 6]]
   let sorted = sort $ d1 : d2 : concat pairs

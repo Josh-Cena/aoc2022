@@ -1,12 +1,17 @@
+module Day2(solve1, solve2) where
 import Data.List
+import Data.Text (Text)
 import Data.Text qualified as T
 import Utils
 
-main = do
-  input <- getInput
-  let games = map (\cur -> ((T.head (cur !! 0)), (T.head (cur !! 1)))) $ map T.words $ T.lines input
-
+solve1 :: [Text] -> IO ()
+solve1 input = do
+  let games = map (\line -> let cur = T.words line in (T.head (cur !! 0), T.head (cur !! 1))) input
   print $ sumMap score games
+
+solve2 :: [Text] -> IO ()
+solve2 input = do
+  let games = map (\line -> let cur = T.words line in (T.head (cur !! 0), T.head (cur !! 1))) input
   print $ sumMap (\g -> score (fst g, shape g)) games
 
 outcomes :: [(Char, Char, Int)]
@@ -23,9 +28,9 @@ outcomes =
   ]
 
 winScore :: (Char, Char) -> Int
-winScore game = case find (\(opp, self, score) -> (opp, self) == game) outcomes of
-  (Just (opp, self, score)) -> score
-  (Nothing) -> 0
+winScore game = case find (\(opp, self, _) -> (opp, self) == game) outcomes of
+  (Just (_, _, score)) -> score
+  Nothing -> 0
 
 shapeScore :: Char -> Int
 shapeScore 'X' = 1
@@ -41,6 +46,6 @@ scoreToOutcome 3 = 'Y'
 scoreToOutcome _ = 'Z'
 
 shape :: (Char, Char) -> Char
-shape game = case find (\(opp, self, score) -> (opp, scoreToOutcome score) == game) outcomes of
-  (Just (opp, self, score)) -> self
-  (Nothing) -> 'X'
+shape game = case find (\(opp, _, score) -> (opp, scoreToOutcome score) == game) outcomes of
+  (Just (_, self, _)) -> self
+  Nothing -> 'X'

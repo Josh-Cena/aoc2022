@@ -1,14 +1,16 @@
+module Day8(solve1, solve2) where
 import Data.Char
 import Data.List
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Tuple
 import Utils
 
-main = do
-  input <- getInput
-  let matrix = addGridIndices $ map (map digitToInt . T.unpack) $ T.lines input
+solve1 :: [Text] -> IO ()
+solve1 input = do
+  let matrix = addGridIndices $ map (map digitToInt . T.unpack) input
   let rowCnt = length matrix
   let colCnt = length $ head matrix
   let indices = [(r, c) | r <- [1 .. rowCnt], c <- [1 .. colCnt]]
@@ -21,10 +23,25 @@ main = do
   let blockerMaps = map recordBlocker [(0, 1), (0, -1), (1, 0), (-1, 0)]
   let visitMaps cb = foldr (cb blockerMaps (rowCnt, colCnt)) 0 indices
   print $ visitMaps countVisible
+
+solve2 :: [Text] -> IO ()
+solve2 input = do
+  let matrix = addGridIndices $ map (map digitToInt . T.unpack) input
+  let rowCnt = length matrix
+  let colCnt = length $ head matrix
+  let indices = [(r, c) | r <- [1 .. rowCnt], c <- [1 .. colCnt]]
+  let grid = addBoundaries rowCnt colCnt $ Map.fromList $ concat matrix
+  let recordBlocker (dx, dy) =
+        let cb = addBlocker grid (dx, dy)
+            indices' = if dx == 0 then indices else map swap indices
+            fold = if max dx dy == 1 then foldr cb else foldl' (flip cb)
+          in fold Map.empty indices'
+  let blockerMaps = map recordBlocker [(0, 1), (0, -1), (1, 0), (-1, 0)]
+  let visitMaps cb = foldr (cb blockerMaps (rowCnt, colCnt)) 0 indices
   print $ visitMaps findMax
 
 addBoundaries :: Int -> Int -> Map (Int, Int) Int -> Map (Int, Int) Int
-addBoundaries rowCnt colCnt map = foldr (flip Map.insert 10) map boundaries
+addBoundaries rowCnt colCnt map = foldr (`Map.insert` 10) map boundaries
   where
     boundaries =
       [(r, c) | r <- [0, rowCnt + 1], c <- [0 .. colCnt + 1]]

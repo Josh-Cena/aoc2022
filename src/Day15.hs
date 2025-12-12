@@ -1,14 +1,14 @@
+module Day15(solve1, solve2) where
+import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Function ((&))
 import Data.List (sortOn, nub, find)
-import Data.Functor ((<&>))
 import Utils
 
-main = do
-  input <- getInput
-  let rawLines = T.lines input
-  let targetY :: Int = readT $ head rawLines
-  let lines = map parseLine $ tail rawLines
+solve1 :: [Text] -> IO ()
+solve1 input = do
+  let targetY = readT $ head input
+  let lines = map parseLine $ tail input
   -- Each line defines a Manhattan distance circle that may intersect with y=targetY
   -- The circle is centered at (x1, y1) with r = abs(x1 - x2) + abs(y1 - y2)
   -- The intersection with y=targetY is a line segment from
@@ -16,28 +16,32 @@ main = do
   -- which is valid if r >= abs(y1 - targetY)
   let segments = createSegments targetY lines
   let beaconsOnLine = lines &
-        filter (\(_, _, x2, y2) -> y2 == targetY) &
+        filter (\(_, _, _, y2) -> y2 == targetY) &
         map (\(_, _, x2, _) -> x2) &
         nub
-  let total = coveredCount segments - fromIntegral (length beaconsOnLine)
+  let total = coveredCount segments - length beaconsOnLine
   print total
 
+solve2 :: [Text] -> IO ()
+solve2 input = do
+  let targetY = readT $ head input
+  let lines = map parseLine $ tail input
   let maxCoord = targetY * 2
   let res = foldr (\y acc -> case acc of
           Just _ -> acc
           Nothing ->
             let segs = createSegments y lines
                 merged = mergeSegments segs
-                firstPossibleSeg = find (\(a, b) -> a > 0) merged
+                firstPossibleSeg = find (\(a, _) -> a > 0) merged
             in case firstPossibleSeg of
               Just (a, _) | a <= maxCoord -> Just $ (a - 1) * 4000000 + y
-              Nothing -> Nothing
+              _ -> Nothing
         ) Nothing [0..maxCoord]
   case res of
     Just v -> print v
     Nothing -> print "No valid segment found"
 
-parseLine :: T.Text -> (Int, Int, Int, Int)
+parseLine :: Text -> (Int, Int, Int, Int)
 parseLine line = (x1, y1, x2, y2)
   where
     [part1, part2] = T.splitOn (T.pack ": closest beacon is at x=") line

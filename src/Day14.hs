@@ -1,22 +1,26 @@
+module Day14(solve1, solve2) where
 import Data.List
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Maybe
-import Data.Text qualified as T
+import Data.Text (Text)
 import Utils
 
+sandSource :: (Int, Int)
 sandSource = (500, 0)
 
-main = do
-  input <- getInput
-  let lines =
-        map (map (\r -> let [x, y] = map readT r in (x, y))) $
-          map (map (splitT ",")) $
-            map (splitT " -> ") $
-              T.lines input
+solve1 :: [Text] -> IO ()
+solve1 input = do
+  let lines = map (map ((\r -> let [x, y] = map readT r in (x, y)) . splitT ",") . splitT " -> ") input
   let matrix = foldr addLine Map.empty lines
   let (_, (_, ymax)) = getBounds lines
   print $ countAdditions (addSand (ymax + 2) ((>= ymax) . snd)) matrix
+
+solve2 :: [Text] -> IO ()
+solve2 input = do
+  let lines = map (map ((\r -> let [x, y] = map readT r in (x, y)) . splitT ",") . splitT " -> ") input
+  let matrix = foldr addLine Map.empty lines
+  let (_, (_, ymax)) = getBounds lines
   print $ countAdditions (addSand (ymax + 2) (== sandSource)) matrix + 1
 
 getBounds :: [[(Int, Int)]] -> ((Int, Int), (Int, Int))
@@ -30,9 +34,9 @@ getBounds lines = foldr updateBothBounds ((1000, 0), (1000, 0)) $ concat lines
       | otherwise = (min, max)
 
 addLine :: [(Int, Int)] -> Map (Int, Int) Char -> Map (Int, Int) Char
-addLine line grid = foldr (flip Map.insert '#') grid points
+addLine line grid = foldr (`Map.insert` '#') grid points
   where
-    points = fst $ foldl' (\(ps, last) cur -> (pointsBetween last cur ++ ps, cur)) ([], line !! 0) line
+    points = fst $ foldl' (\(ps, last) cur -> (pointsBetween last cur ++ ps, cur)) ([], head line) line
 
     pointsBetween (x1, y1) (x2, y2) =
       [(x, y) | x <- [min x1 x2 .. max x1 x2], y <- [min y1 y2 .. max y1 y2]]
@@ -50,7 +54,7 @@ addSand floorY endCond grid
   | otherwise = Just $ Map.insert finalPos 'o' grid
   where
     trail = iterate moveDown sandSource
-    finalPos = fst $ head $ dropWhile (\(a, b) -> a /= b) $ zip trail (tail trail)
+    finalPos = fst $ head $ dropWhile (uncurry (/=)) $ zip trail (tail trail)
     moveDown p
       | snd p + 1 == floorY = p
       | not $ Map.member down grid = down

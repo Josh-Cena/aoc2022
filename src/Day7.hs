@@ -1,3 +1,4 @@
+module Day7(solve1, solve2) where
 import Data.List
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -16,18 +17,25 @@ instance Show Dirent where
         acc ++ "- " ++ T.unpack name
           ++ ( case dirent of
                  File size -> " (" ++ show size ++ ")\n"
-                 Directory _ -> ":\n" ++ (unlines $ map ("  " ++) $ lines $ show dirent)
+                 Directory _ -> ":\n" ++ unlines (map ("  " ++) $ lines $ show dirent)
              )
+  show (File size) = " (" ++ show size ++ ")\n"
 
 type TraverseState = (Dirent, [Text])
 
-main = do
-  input <- getInput
-  let logs = splitT "\n$ " $ T.drop 2 input
-  let (dir, path) = foldl' (flip processCmd) (Directory Map.empty, []) logs
+solve1 :: [Text] -> IO ()
+solve1 input = do
+  let logs = splitT "\n$ " $ T.drop 2 $ T.unlines input
+  let (dir, _) = foldl' (flip processCmd) (Directory Map.empty, []) logs
+  let dirSizes = sizes dir
+  print $ sum $ filter (<= 100000) dirSizes
+
+solve2 :: [Text] -> IO ()
+solve2 input = do
+  let logs = splitT "\n$ " $ T.drop 2 $ T.unlines input
+  let (dir, _) = foldl' (flip processCmd) (Directory Map.empty, []) logs
   let dirSizes = sizes dir
   let total = head dirSizes
-  print $ sum $ filter (<= 100000) dirSizes
   printMaybe $ find (>= total - 40000000) (sort dirSizes)
 
 printMaybe :: Show a => Maybe a -> IO ()
@@ -39,6 +47,7 @@ processCmd :: Text -> TraverseState -> TraverseState
 processCmd log
   | command == "cd" = cd (T.drop 3 log)
   | command == "ls" = ls (tail $ T.lines log)
+  | otherwise = error ("Unknown command: " ++ command)
   where
     command = T.unpack $ T.take 2 log
 
@@ -57,6 +66,7 @@ ls logs (tree, path) = (newTree, path)
 
     getDirents :: [Text] -> Dirent -> Map Text Dirent
     getDirents [] (Directory root) = root
+    getDirents _ (File _) = error "Cannot get subdirectories of a file"
     getDirents (dirName : parentPath) dir = case Map.lookup dirName (getDirents parentPath dir) of
       Just (Directory subDir) -> subDir
       _ -> error ("Directory not found: " ++ T.unpack dirName)
@@ -69,16 +79,17 @@ ls logs (tree, path) = (newTree, path)
         [size, name] = T.words log
 
     addEntries :: Map Text Dirent -> Map Text Dirent
-    addEntries dirents = foldr addEntry dirents $ map parseLsLog logs
+    addEntries dirents = foldr (addEntry . parseLsLog) dirents logs
       where
         addEntry (FileEntry name size) dirents = Map.insert name (File size) dirents
         addEntry (DirEntry name) dirents = case Map.lookup name dirents of
-          Just subDir -> dirents
+          Just _ -> dirents
           _ -> Map.insert name (Directory Map.empty) dirents
 
     -- 2nd argument is the root; 3rd is the subtree to be inserted; 1st is its path
     updateSubtree :: [Text] -> Dirent -> Dirent -> Dirent
     updateSubtree [] _ newDir = newDir
+    updateSubtree _ (File _) _ = error "Cannot update a file"
     updateSubtree (topSeg : rest) (Directory root) newDir =
       Directory
         ( Map.insert topSeg (updateSubtree rest subtree newDir) root
@@ -89,7 +100,8 @@ ls logs (tree, path) = (newTree, path)
           Nothing -> error ("Directory not found: " ++ T.unpack topSeg)
 
 sizes :: Dirent -> [Int]
-sizes (Directory subDir) = (subdirsSize + filesSize) : (concat allSizes)
+sizes (File size) = [size]
+sizes (Directory subDir) = (subdirsSize + filesSize) : concat allSizes
   where
     (files, subdirs) = partition isFile $ Map.elems subDir
     allSizes = map sizes subdirs

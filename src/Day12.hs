@@ -1,3 +1,4 @@
+module Day12(solve1, solve2) where
 import Data.Char
 import Data.Map (Map)
 import Data.Map qualified as Map
@@ -5,16 +6,21 @@ import Data.Sequence (Seq, (><))
 import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
+import Data.Text (Text)
 import Data.Text qualified as T
 import Utils
 
-main = do
-  input <- getInput
-  let points = concat $ addGridIndices $ map T.unpack $ T.lines input
-  let (start, end, matrix, starts) = foldr analyzePoint ((0, 0), (0, 0), Map.empty, []) points
+solve1 :: [Text] -> IO ()
+solve1 input = do
+  let points = concat $ addGridIndices $ map T.unpack input
+  let (start, end, matrix, _) = foldr analyzePoint ((0, 0), (0, 0), Map.empty, []) points
   let shortest = bfs matrix [start]
   print $ shortest ! end
 
+solve2 :: [Text] -> IO ()
+solve2 input = do
+  let points = concat $ addGridIndices $ map T.unpack input
+  let (_, end, matrix, starts) = foldr analyzePoint ((0, 0), (0, 0), Map.empty, []) points
   let shortest = bfs matrix starts
   print $ shortest ! end
 
@@ -47,7 +53,7 @@ runQueue matrix (queue, seen) shortest
     queue' = Seq.drop 1 queue >< Seq.fromList toVisitNeighbors
     seen' = Set.union seen $ Set.fromList toVisitNeighbors
     minDist = minimum visitedNeighbors + 1
-    shortest' = Map.insertWith (flip const) cur minDist shortest
+    shortest' = Map.insertWith (\_ x -> x) cur minDist shortest
 
     getStatus pos = case Map.lookup pos matrix of
       -- Out of bounds; can't go there
@@ -59,5 +65,5 @@ runQueue matrix (queue, seen) shortest
           | otherwise -> -2
         -- Neighbor is not visited; try pushing neighbor into queue
         Nothing
-          | neighborHeight - curHeight <= 1 && (not $ Set.member pos seen) -> -1
+          | neighborHeight - curHeight <= 1 && not (Set.member pos seen) -> -1
           | otherwise -> -2

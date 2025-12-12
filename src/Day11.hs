@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns #-}
+module Day11(solve1, solve2) where
 
 import Data.Char
 import Data.List
@@ -9,12 +9,15 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Utils
 
-main = do
-  input <- getInput
-  let monkeys = Map.fromList $ map parseMonkey $ splitT "\n\n" input
+solve1 :: [Text] -> IO ()
+solve1 input = do
+  let monkeys = Map.fromList $ map parseMonkey $ splitT "\n\n" $ T.unlines input
   let monkeys' = passAround 20 3 monkeys
   print $ monkeyBusiness monkeys'
 
+solve2 :: [Text] -> IO ()
+solve2 input = do
+  let monkeys = Map.fromList $ map parseMonkey $ splitT "\n\n" $ T.unlines input
   let monkeys' = passAround 10000 1 monkeys
   print $ monkeyBusiness monkeys'
 
@@ -42,6 +45,7 @@ parseMonkey text =
       "* old" -> (^ 2)
       '*' : num -> (* (read $ tail num))
       '+' : num -> (+ (read $ tail num))
+      _ -> error "unknown operation"
     test = readAfter "  Test: divisible by " l4
     target1 = readAfter "    If true: throw to monkey " l5
     target2 = readAfter "    If false: throw to monkey " l6
@@ -49,7 +53,7 @@ parseMonkey text =
     readAfter prefix = readT . dropPrefix prefix
 
 monkeyInspect :: Monkey -> (Int, Int) -> Int -> (Int, Int)
-monkeyInspect (Monkey {items, operation, test, target1, target2}) (relief, divisor) item = case item' `mod` test of
+monkeyInspect (Monkey {operation, test, target1, target2}) (relief, divisor) item = case item' `mod` test of
   0 -> (target1, item')
   _ -> (target2, item')
   where
@@ -74,4 +78,4 @@ passAround rounds relief monkeys = foldr (const $ doRound (relief, divisor)) mon
 monkeyBusiness :: Map Int Monkey -> Int
 monkeyBusiness monkeys = fst * snd
   where
-    fst : snd : rest = sortOn Down $ map inspectTimes $ Map.elems monkeys
+    fst : snd : _ = sortOn Down $ map inspectTimes $ Map.elems monkeys

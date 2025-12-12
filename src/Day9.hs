@@ -1,3 +1,4 @@
+module Day9(solve1, solve2) where
 import Data.List
 import Data.Ord
 import Data.Set (Set)
@@ -6,13 +7,16 @@ import Data.Text (Text)
 import Data.Text qualified as T
 import Utils
 
-main = do
-  input <- getInput
-  let moves = map parseMove $ T.lines input
-  let (chain, set) = foldl' makeMove (replicate 2 (0, 0), Set.empty) moves
+solve1 :: [Text] -> IO ()
+solve1 input = do
+  let moves = map parseMove input
+  let (_, set) = foldl' makeMove (replicate 2 (0, 0), Set.empty) moves
   print $ Set.size set
 
-  let (chain2, set2) = foldl' makeMove (replicate 10 (0, 0), Set.empty) moves
+solve2 :: [Text] -> IO ()
+solve2 input = do
+  let moves = map parseMove input
+  let (_, set2) = foldl' makeMove (replicate 10 (0, 0), Set.empty) moves
   print $ Set.size set2
 
 parseMove :: Text -> (Char, Int)
@@ -32,7 +36,8 @@ makeMove (chain, set) (dir, count) = makeMove (chain', Set.insert (head chain') 
       'D' -> chainHead |+| (0, -1)
       'L' -> chainHead |+| (-1, 0)
       'R' -> chainHead |+| (1, 0)
-    chain' = foldr (\seg moved -> (moveTail seg $ head moved) : moved) [chainHead'] rest
+      _ -> error "Invalid direction"
+    chain' = foldr (\seg moved -> moveTail seg (head moved) : moved) [chainHead'] rest
 
     moveTail t h'
       | max (abs dx) (abs dy) < 2 = t

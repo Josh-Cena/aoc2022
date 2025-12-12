@@ -1,12 +1,17 @@
+module Day4(solve1, solve2) where
 import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.Utils.Misc
 import Utils
 
-main = do
-  input <- getInput
-  let lines = map (map parseRange . (T.split (== ','))) $ T.lines input
+solve1 :: [Text] -> IO ()
+solve1 input = do
+  let lines = map (map parseRange . T.split (== ',')) input
   print $ count contain lines
+
+solve2 :: [Text] -> IO ()
+solve2 input = do
+  let lines = map (map parseRange . T.split (== ',')) input
   print $ count overlap lines
 
 parseRange :: Text -> (Int, Int)
