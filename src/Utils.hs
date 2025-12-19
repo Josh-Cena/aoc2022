@@ -4,7 +4,6 @@ import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Text (Text)
 import Data.Text qualified as T
-import System.Environment
 
 (|+|) :: (Num a) => (a, a) -> (a, a) -> (a, a)
 (a, b) |+| (c, d) = (a + c, b + d)
