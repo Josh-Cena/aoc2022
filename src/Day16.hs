@@ -1,4 +1,6 @@
 module Day16(solve1, solve2) where
+import Data.Bifunctor (bimap, first)
+import Data.List (find, foldl', sortBy)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Map (Map)
@@ -14,7 +16,8 @@ solve1 input = do
   let distMap = M.unions $ map (distance graph) (M.keys graph)
   let meaningfulDistMap = M.filterWithKey (\(a, b) _ -> (a == T.pack "AA" || M.member a meaningfulFlows) && M.member b meaningfulFlows && a /= b) distMap
   let meaningfulDistMap' = transformDist meaningfulDistMap
-  print $ maxReward meaningfulDistMap' meaningfulFlows
+  let paths = allPaths meaningfulDistMap' meaningfulFlows 30
+  print $ maximum $ map snd paths
 
 solve2 :: [Text] -> IO ()
 solve2 input = do
@@ -23,7 +26,9 @@ solve2 input = do
   let distMap = M.unions $ map (distance graph) (M.keys graph)
   let meaningfulDistMap = M.filterWithKey (\(a, b) _ -> (a == T.pack "AA" || M.member a meaningfulFlows) && M.member b meaningfulFlows && a /= b) distMap
   let meaningfulDistMap' = transformDist meaningfulDistMap
-  print $ maxReward2 meaningfulDistMap' meaningfulFlows
+  let paths = sortBy (\(_, s1) (_, s2) -> compare s2 s1) $ map (first S.fromList) $ allPaths meaningfulDistMap' meaningfulFlows 26
+  -- Not very efficient because it's O(n^2) where n ~ 60k but works
+  print $ foldl' (\curMax (p1, s1) -> max curMax $ maybe 0 ((+) s1 . snd) $ find (\(p2, s2) -> s1 + s2 > curMax && S.disjoint p1 p2) paths) 0 paths
 
 parseLine :: Text -> (Text, (Int, [Text]))
 parseLine line = (lbl, (flow, nodes))
@@ -56,45 +61,24 @@ transformDist = M.foldlWithKey' insertDist M.empty
           updatedInnerMap = M.insert b d innerMap
       in M.insert a updatedInnerMap acc
 
-maxReward :: Map Text (Map Text Int) -> Map Text Int -> Int
-maxReward distMap flows = go (T.pack "AA") 30 S.empty
+allPaths :: Map Text (Map Text Int) -> Map Text Int -> Int -> [([Text], Int)]
+allPaths distMap flows time = go (T.pack "AA") time S.empty
   where
     -- state: current node, time left, opened valves
     -- current node is the last opened valve
+    go :: Text -> Int -> S.Set Text -> [([Text], Int)]
     go current timeLeft opened =
-      let neighbors = distMap M.! current
-          possibleMoves = M.toList $ M.filterWithKey (\k _ -> S.notMember k opened) neighbors
-          rewards = map (\(next, dist) ->
-              let timeAfterMoveAndOpen = timeLeft - dist - 1
-              in if timeAfterMoveAndOpen <= 0 then 0
-                  else
-                    let newOpened = S.insert next opened
-                        rewardFromThisMove = (flows M.! next) * timeAfterMoveAndOpen
-                        rewardFromRest = go next timeAfterMoveAndOpen newOpened
-                    in rewardFromThisMove + rewardFromRest
-            ) possibleMoves
-      in if null rewards then 0 else maximum rewards
+      let
+        neighbors = distMap M.! current
+        possibleTargets = M.toList $ M.filterWithKey (\k dist -> S.notMember k opened && dist < timeLeft - 1) neighbors
+        paths = concatMap (\(tgt, dist) ->
+            let newOpened = S.insert tgt opened
+                timeAfterMoveAndOpen = timeLeft - dist - 1
+                rewardFromThisMove = (flows M.! tgt) * timeAfterMoveAndOpen
+                choicesFromRest = go tgt timeAfterMoveAndOpen newOpened
+            in map (bimap (tgt :) (rewardFromThisMove +)) choicesFromRest
+          ) possibleTargets
+      in ([], 0) : paths
 
-maxReward2 :: Map Text (Map Text Int) -> Map Text Int -> Int
-maxReward2 distMap flows = go ((T.pack "AA", 0), (T.pack "AA", 0)) 26 S.empty
-  where
-    -- state: (current node, t_n) (for you and elephant), time left, opened valves
-    -- if t_n > 0, it means the agent is still moving to "current node"
-    -- if t_n == 0, it means the agent has already opened the "current node"
-    go ((cur1, 0), (cur2, t2)) timeLeft opened =
-      let neighbors1 = distMap M.! cur1
-          possibleMoves1 = M.toList $ M.filterWithKey (\k _ -> S.notMember k opened) neighbors1
-          rewards1 = map (\(next1, dist1) ->
-              go ((next1, dist1 + 1), (cur2, t2)) timeLeft (S.insert next1 opened)
-            ) possibleMoves1
-      in if null rewards1 then 0 else maximum rewards1
-    go ((cur1, t1), (cur2, t2)) timeLeft opened
-      | t1 > t2 = go ((cur2, t2), (cur1, t1)) timeLeft opened
-      | t1 < t2 = if timeLeft < t1 then 0
-                  else
-                      go ((cur1, 0), (cur2, t2 - t1)) (timeLeft - t1) opened
-                        + flows M.! cur1 * (timeLeft - t1)
-      | timeLeft < t1 = 0
-      | otherwise = go ((cur1, 0), (cur2, 0)) (timeLeft - t1) opened
-                    + flows M.! cur1 * (timeLeft - t1)
-                    + flows M.! cur2 * (timeLeft - t2)
+isValidPair :: (([Text], Int), ([Text], Int)) -> Bool
+isValidPair ((path1, _), (path2, _)) = S.disjoint (S.fromList path1) (S.fromList path2)
