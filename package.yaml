@@ -27,4 +27,4 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    default-extensions: [ImportQualifiedPost, NamedFieldPuns, TupleSections]
+    default-extensions: [ImportQualifiedPost, NamedFieldPuns, TupleSections, MultiWayIf]

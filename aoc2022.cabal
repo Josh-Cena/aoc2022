@@ -30,6 +30,7 @@ executable aoc2022
       Day17
       Day18
       Day2
+      Day20
       Day3
       Day4
       Day5
@@ -45,6 +46,7 @@ executable aoc2022
       ImportQualifiedPost
       NamedFieldPuns
       TupleSections
+      MultiWayIf
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       base >=4.7 && <5
