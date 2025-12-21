@@ -13,11 +13,12 @@ ghc-options:
 - -Wcompat
 - -Widentities
 - -Wincomplete-record-updates
-- -Wincomplete-uni-patterns
 - -Wmissing-export-lists
 - -Wmissing-home-modules
 - -Wpartial-fields
 - -Wredundant-constraints
+- -Wno-incomplete-uni-patterns
+- -Wno-name-shadowing
 
 executables:
   aoc2022:
@@ -27,4 +28,9 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    default-extensions: [ImportQualifiedPost, NamedFieldPuns, TupleSections, MultiWayIf]
+    default-extensions:
+    - ImportQualifiedPost
+    - MultiWayIf
+    - NamedFieldPuns
+    - NumericUnderscores
+    - TupleSections

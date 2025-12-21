@@ -79,6 +79,3 @@ allPaths distMap flows time = go (T.pack "AA") time S.empty
             in map (bimap (tgt :) (rewardFromThisMove +)) choicesFromRest
           ) possibleTargets
       in ([], 0) : paths
-
-isValidPair :: (([Text], Int), ([Text], Int)) -> Bool
-isValidPair ((path1, _), (path2, _)) = S.disjoint (S.fromList path1) (S.fromList path2)
