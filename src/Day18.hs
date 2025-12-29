@@ -1,6 +1,6 @@
 module Day18(solve1, solve2) where
 import Data.Set (Set)
-import qualified Data.Set as S
+import Data.Set qualified as S
 import Data.Sequence (Seq)
 import Data.Sequence qualified as Seq
 import Data.Text (Text)
@@ -45,7 +45,6 @@ exposedArea cubes = foldr (\p acc -> acc + exposedSides p) 0 cubes
     cubeSet = S.fromList cubes
     inBox (x,y,z) = x >= minX && x <= maxX && y >= minY && y <= maxY && z >= minZ && z <= maxZ
     start = (minX, minY, minZ)
-    -- BFS flood fill over empty cells reachable from outside
     outsideAir = bfs (Seq.singleton start) (S.singleton start)
     bfs :: Seq (Int, Int, Int) -> Set (Int, Int, Int) -> Set (Int, Int, Int)
     bfs Seq.Empty seen = seen

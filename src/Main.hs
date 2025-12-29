@@ -19,6 +19,7 @@ import Day15
 import Day16
 import Day17
 import Day18
+import Day19
 import Day20
 import Day21
 
@@ -68,6 +69,8 @@ main = do
     ("17", "2") -> Day17.solve2 contents
     ("18", "1") -> Day18.solve1 contents
     ("18", "2") -> Day18.solve2 contents
+    ("19", "1") -> Day19.solve1 contents
+    ("19", "2") -> Day19.solve2 contents
     ("20", "1") -> Day20.solve1 contents
     ("20", "2") -> Day20.solve2 contents
     ("21", "1") -> Day21.solve1 contents
