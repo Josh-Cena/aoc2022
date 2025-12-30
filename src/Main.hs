@@ -23,6 +23,7 @@ import Day19
 import Day20
 import Day21
 import Day22
+import Day23
 
 main :: IO ()
 main = do
@@ -78,4 +79,6 @@ main = do
     ("21", "2") -> Day21.solve2 contents
     ("22", "1") -> Day22.solve1 contents
     ("22", "2") -> Day22.solve2 contents
+    ("23", "1") -> Day23.solve1 contents
+    ("23", "2") -> Day23.solve2 contents
     _ -> putStrLn "Day not implemented"
