@@ -1,6 +1,7 @@
-module Day5(solve1, solve2) where
+module Day5 (solve1, solve2) where
+
 import Data.Char
-import Data.List
+import Data.List (foldl', transpose)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Utils
@@ -38,8 +39,8 @@ parseMove m = (fst, snd, trd)
 makeMove :: ([Char] -> [Char]) -> [[Char]] -> (Int, Int, Int) -> [[Char]]
 makeMove process columns (cnt, from, to) = before ++ col1' : middle ++ col2' : after
   where
-    (before, col1 : rest) = splitAt ((min from to) - 1) columns
-    (middle, col2 : after) = splitAt ((abs (from - to)) - 1) rest
+    (before, col1 : rest) = splitAt (min from to - 1) columns
+    (middle, col2 : after) = splitAt (abs (from - to) - 1) rest
     col1' = if from < to then drop cnt col1 else process (take cnt col2) ++ col1
     col2' = if from > to then drop cnt col2 else process (take cnt col1) ++ col2
 

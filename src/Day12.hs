@@ -1,8 +1,9 @@
-module Day12(solve1, solve2) where
+module Day12 (solve1, solve2) where
+
 import Data.Char
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Sequence (Seq, (><))
+import Data.Sequence (Seq)
 import Data.Sequence qualified as Seq
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -14,15 +15,13 @@ solve1 :: [Text] -> IO ()
 solve1 input = do
   let points = concat $ addGridIndices $ map T.unpack input
   let (start, end, matrix, _) = foldr analyzePoint ((0, 0), (0, 0), Map.empty, []) points
-  let shortest = bfs matrix [start]
-  print $ shortest ! end
+  print $ bfs matrix end [start]
 
 solve2 :: [Text] -> IO ()
 solve2 input = do
   let points = concat $ addGridIndices $ map T.unpack input
   let (_, end, matrix, starts) = foldr analyzePoint ((0, 0), (0, 0), Map.empty, []) points
-  let shortest = bfs matrix starts
-  print $ shortest ! end
+  print $ bfs matrix end starts
 
 type Acc = ((Int, Int), (Int, Int), Map (Int, Int) Int, [(Int, Int)])
 
@@ -35,35 +34,31 @@ analyzePoint (cur, curV) (start, end, matrix, starts) = case curV of
   where
     matrixAdd v = Map.insert cur (ord v) matrix
 
-bfs :: Map (Int, Int) Int -> [(Int, Int)] -> Map (Int, Int) Int
-bfs matrix starts =
-  runQueue matrix (Seq.fromList starts, Set.fromList starts) $ Map.fromList $ map (,0) starts
+bfs :: Map (Int, Int) Int -> (Int, Int) -> [(Int, Int)] -> Int
+bfs matrix end starts = runQueue matrix end (Seq.fromList $ map (,0) starts) Set.empty
 
-runQueue :: Map (Int, Int) Int -> (Seq (Int, Int), Set (Int, Int)) -> Map (Int, Int) Int -> Map (Int, Int) Int
-runQueue matrix (queue, seen) shortest
-  | Seq.null queue = shortest
-  | otherwise = runQueue matrix (queue', seen') shortest'
+runQueue ::
+  Map (Int, Int) Int ->
+  (Int, Int) ->
+  Seq ((Int, Int), Int) ->
+  Set (Int, Int) ->
+  Int
+runQueue _ _ Seq.Empty _ = error "No path found"
+runQueue matrix end ((cur, curDist) Seq.:<| rest) visited =
+  if cur == end then curDist else runQueue matrix end queue' visited'
   where
-    cur = queue `Seq.index` 0
-    curHeight = matrix ! cur
-    neighbors = map (|+| cur) [(1, 0), (0, 1), (-1, 0), (0, -1)]
-    statuses = zip neighbors $ map getStatus neighbors
-    visitedNeighbors = filter (>= 0) $ map snd statuses
-    toVisitNeighbors = map fst $ filter ((== -1) . snd) statuses
-    queue' = Seq.drop 1 queue >< Seq.fromList toVisitNeighbors
-    seen' = Set.union seen $ Set.fromList toVisitNeighbors
-    minDist = minimum visitedNeighbors + 1
-    shortest' = Map.insertWith (\_ x -> x) cur minDist shortest
+    curHeight = matrix Map.! cur
+    neighbors = filter canGo $ map (|+| cur) [(1, 0), (0, 1), (-1, 0), (0, -1)]
+    neighborDists = map (,curDist + 1) neighbors
+    visited' = Set.union visited $ Set.fromList neighbors
+    queue' = rest Seq.>< Seq.fromList neighborDists
 
-    getStatus pos = case Map.lookup pos matrix of
-      -- Out of bounds; can't go there
-      Nothing -> -2
-      Just neighborHeight -> case Map.lookup pos shortest of
-        -- Neighbor is visited; try filling current with neighbor
-        Just s
-          | curHeight - neighborHeight <= 1 -> s
-          | otherwise -> -2
-        -- Neighbor is not visited; try pushing neighbor into queue
-        Nothing
-          | neighborHeight - curHeight <= 1 && not (Set.member pos seen) -> -1
-          | otherwise -> -2
+    canGo pos = case Map.lookup pos matrix of
+      Nothing -> False
+      Just neighborHeight -> Set.notMember pos visited && neighborHeight - curHeight <= 1
+
+addGridIndices :: [[a]] -> [[((Int, Int), a)]]
+addGridIndices grid = grid''
+  where
+    grid' = zip [1 ..] $ map (zip [1 ..]) grid
+    grid'' = map (\(r, row) -> map (\(c, val) -> ((r, c), val)) row) grid'

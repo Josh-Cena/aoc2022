@@ -1,74 +1,56 @@
-module Day8(solve1, solve2) where
+module Day8 (solve1, solve2) where
+
 import Data.Char
-import Data.List
-import Data.Map (Map)
-import Data.Map qualified as Map
+import Data.IntMap (IntMap)
+import Data.IntMap qualified as IntMap
+import Data.List (mapAccumL, mapAccumR, transpose, zipWith4)
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as T
-import Data.Tuple
-import Utils
+import GHC.Utils.Misc (count)
 
 solve1 :: [Text] -> IO ()
 solve1 input = do
-  let matrix = addGridIndices $ map (map digitToInt . T.unpack) input
-  let rowCnt = length matrix
-  let colCnt = length $ head matrix
-  let indices = [(r, c) | r <- [1 .. rowCnt], c <- [1 .. colCnt]]
-  let grid = addBoundaries rowCnt colCnt $ Map.fromList $ concat matrix
-  let recordBlocker (dx, dy) =
-        let cb = addBlocker grid (dx, dy)
-            indices' = if dx == 0 then indices else map swap indices
-            fold = if max dx dy == 1 then foldr cb else foldl' (flip cb)
-          in fold Map.empty indices'
-  let blockerMaps = map recordBlocker [(0, 1), (0, -1), (1, 0), (-1, 0)]
-  let visitMaps cb = foldr (cb blockerMaps (rowCnt, colCnt)) 0 indices
-  print $ visitMaps countVisible
+  let grid = map (map digitToInt . T.unpack) input
+  let lv = map leftVisible grid
+  let rv = map rightVisible grid
+  let grid' = transpose grid
+  let tv = transpose $ map leftVisible grid'
+  let bv = transpose $ map rightVisible grid'
+  let visible = zipWith4 (zipWith4 (join4 (||))) lv rv tv bv
+  print $ count id (concat visible)
 
 solve2 :: [Text] -> IO ()
 solve2 input = do
-  let matrix = addGridIndices $ map (map digitToInt . T.unpack) input
-  let rowCnt = length matrix
-  let colCnt = length $ head matrix
-  let indices = [(r, c) | r <- [1 .. rowCnt], c <- [1 .. colCnt]]
-  let grid = addBoundaries rowCnt colCnt $ Map.fromList $ concat matrix
-  let recordBlocker (dx, dy) =
-        let cb = addBlocker grid (dx, dy)
-            indices' = if dx == 0 then indices else map swap indices
-            fold = if max dx dy == 1 then foldr cb else foldl' (flip cb)
-          in fold Map.empty indices'
-  let blockerMaps = map recordBlocker [(0, 1), (0, -1), (1, 0), (-1, 0)]
-  let visitMaps cb = foldr (cb blockerMaps (rowCnt, colCnt)) 0 indices
-  print $ visitMaps findMax
+  let grid = map (map digitToInt . T.unpack) input
+  let ld = map leftDistances grid
+  let rd = map rightDistances grid
+  let grid' = transpose grid
+  let td = transpose $ map leftDistances grid'
+  let bd = transpose $ map rightDistances grid'
+  let distances = zipWith4 (zipWith4 (join4 (*))) ld rd td bd
+  print $ maximum (concat distances)
 
-addBoundaries :: Int -> Int -> Map (Int, Int) Int -> Map (Int, Int) Int
-addBoundaries rowCnt colCnt map = foldr (`Map.insert` 10) map boundaries
+scanner :: Int -> Int -> (Int, Bool)
+scanner prevMax height = (max prevMax height, height > prevMax)
+
+leftVisible :: [Int] -> [Bool]
+leftVisible = snd . mapAccumL scanner (-1)
+
+rightVisible :: [Int] -> [Bool]
+rightVisible = snd . mapAccumR scanner (-1)
+
+scanner2 :: IntMap Int -> (Int, Int) -> (IntMap Int, Int)
+scanner2 lastIndex (j, height) = (lastIndex', minimum distances)
   where
-    boundaries =
-      [(r, c) | r <- [0, rowCnt + 1], c <- [0 .. colCnt + 1]]
-        ++ [(r, c) | r <- [1 .. rowCnt], c <- [0, colCnt + 1]]
+    distances = [j - fromMaybe 0 (IntMap.lookup h lastIndex) | h <- [height .. 9]]
+    lastIndex' = IntMap.insert height j lastIndex
 
-isBoundary :: (Int, Int) -> (Int, Int) -> Bool
-isBoundary (rowCnt, colCnt) (r, c) = r == 0 || r == rowCnt + 1 || c == 0 || c == colCnt + 1
+leftDistances :: [Int] -> [Int]
+leftDistances = snd . mapAccumL scanner2 IntMap.empty . zip [0 ..]
 
-addBlocker :: Map (Int, Int) Int -> (Int, Int) -> (Int, Int) -> Map (Int, Int) (Int, Int) -> Map (Int, Int) (Int, Int)
-addBlocker grid (dx, dy) pos = Map.insert pos blockerPos
-  where
-    curValue = grid ! pos
-    direction = tail $ iterate (\(x, y) -> (x + dx, y + dy)) pos
-    blockerPos = case find (\cand -> grid ! cand >= curValue) direction of
-      Just p -> p
-      Nothing -> error "No blocker found"
+rightDistances :: [Int] -> [Int]
+rightDistances xs = snd $ mapAccumR scanner2 IntMap.empty $ zip [(length xs - 1), (length xs - 2) .. 0] xs
 
-countVisible :: [Map (Int, Int) (Int, Int)] -> (Int, Int) -> (Int, Int) -> Int -> Int
-countVisible blockerMaps dims pos = (+) (int isVisible)
-  where
-    isVisible = any (\map -> isBoundary dims (map ! pos)) blockerMaps
-
-findMax :: [Map (Int, Int) (Int, Int)] -> (Int, Int) -> (Int, Int) -> Int -> Int
-findMax blockerMaps dims (x, y) = max score
-  where
-    score = foldr ((*) . scoreOfDir) 1 blockerMaps
-    scoreOfDir map = rawScore - int (isBoundary dims (blockerX, blockerY))
-      where
-        (blockerX, blockerY) = map ! (x, y)
-        rawScore = max (abs (blockerY - y)) (abs (blockerX - x))
+join4 :: (a -> a -> a) -> a -> a -> a -> a -> a
+join4 f a b c d = f (f a b) (f c d)

@@ -1,7 +1,9 @@
-module Day7(solve1, solve2) where
-import Data.List
+module Day7 (solve1, solve2) where
+
+import Data.List (find, foldl', partition, sort)
 import Data.Map (Map)
 import Data.Map qualified as Map
+import Data.Maybe (fromJust)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Utils
@@ -14,9 +16,11 @@ instance Show Dirent where
     where
       join :: String -> Text -> Dirent -> String
       join acc name dirent =
-        acc ++ "- " ++ T.unpack name
+        acc
+          ++ "- "
+          ++ T.unpack name
           ++ ( case dirent of
-                 File size -> " (" ++ show size ++ ")\n"
+                 File _ -> show dirent
                  Directory _ -> ":\n" ++ unlines (map ("  " ++) $ lines $ show dirent)
              )
   show (File size) = " (" ++ show size ++ ")\n"
@@ -26,27 +30,22 @@ type TraverseState = (Dirent, [Text])
 solve1 :: [Text] -> IO ()
 solve1 input = do
   let logs = splitT "\n$ " $ T.drop 2 $ T.unlines input
-  let (dir, _) = foldl' (flip processCmd) (Directory Map.empty, []) logs
+  let (dir, _) = foldl' processCmd (Directory Map.empty, []) logs
   let dirSizes = sizes dir
   print $ sum $ filter (<= 100000) dirSizes
 
 solve2 :: [Text] -> IO ()
 solve2 input = do
   let logs = splitT "\n$ " $ T.drop 2 $ T.unlines input
-  let (dir, _) = foldl' (flip processCmd) (Directory Map.empty, []) logs
+  let (dir, _) = foldl' processCmd (Directory Map.empty, []) logs
   let dirSizes = sizes dir
   let total = head dirSizes
-  printMaybe $ find (>= total - 40000000) (sort dirSizes)
+  print $ fromJust $ find (>= total - 40000000) (sort dirSizes)
 
-printMaybe :: Show a => Maybe a -> IO ()
-printMaybe a = case a of
-  Just a -> print a
-  Nothing -> print "Nothing"
-
-processCmd :: Text -> TraverseState -> TraverseState
-processCmd log
-  | command == "cd" = cd (T.drop 3 log)
-  | command == "ls" = ls (tail $ T.lines log)
+processCmd :: TraverseState -> Text -> TraverseState
+processCmd st log
+  | command == "cd" = cd (T.drop 3 log) st
+  | command == "ls" = ls (tail $ T.lines log) st
   | otherwise = error ("Unknown command: " ++ command)
   where
     command = T.unpack $ T.take 2 log

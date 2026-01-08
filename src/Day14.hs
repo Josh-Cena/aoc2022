@@ -1,9 +1,10 @@
-module Day14(solve1, solve2) where
-import Data.List
+module Day14 (solve1, solve2) where
+
+import Data.List (foldl')
 import Data.Map (Map)
 import Data.Map qualified as Map
-import Data.Maybe
 import Data.Text (Text)
+import GHC.Utils.Misc (countWhile)
 import Utils
 
 sandSource :: (Int, Int)
@@ -12,26 +13,16 @@ sandSource = (500, 0)
 solve1 :: [Text] -> IO ()
 solve1 input = do
   let lines = map (map ((\r -> let [x, y] = map readT r in (x, y)) . splitT ",") . splitT " -> ") input
-  let matrix = foldr addLine Map.empty lines
-  let (_, (_, ymax)) = getBounds lines
-  print $ countAdditions (addSand (ymax + 2) ((>= ymax) . snd)) matrix
+  let grid = foldr addLine Map.empty lines
+  let ymax = maximum $ map snd $ concat lines
+  print $ countWhile (\(_, y) -> y < ymax) (dropSands ymax grid)
 
 solve2 :: [Text] -> IO ()
 solve2 input = do
   let lines = map (map ((\r -> let [x, y] = map readT r in (x, y)) . splitT ",") . splitT " -> ") input
-  let matrix = foldr addLine Map.empty lines
-  let (_, (_, ymax)) = getBounds lines
-  print $ countAdditions (addSand (ymax + 2) (== sandSource)) matrix + 1
-
-getBounds :: [[(Int, Int)]] -> ((Int, Int), (Int, Int))
-getBounds lines = foldr updateBothBounds ((1000, 0), (1000, 0)) $ concat lines
-  where
-    updateBothBounds (x, y) (xBounds, yBounds) =
-      (updateBounds x xBounds, updateBounds y yBounds)
-    updateBounds p (min, max)
-      | p < min = (p, max)
-      | p > max = (min, p)
-      | otherwise = (min, max)
+  let grid = foldr addLine Map.empty lines
+  let ymax = maximum $ map snd $ concat lines
+  print $ 1 + countWhile (/= sandSource) (dropSands (ymax + 1) grid)
 
 addLine :: [(Int, Int)] -> Map (Int, Int) Char -> Map (Int, Int) Char
 addLine line grid = foldr (`Map.insert` '#') grid points
@@ -41,22 +32,15 @@ addLine line grid = foldr (`Map.insert` '#') grid points
     pointsBetween (x1, y1) (x2, y2) =
       [(x, y) | x <- [min x1 x2 .. max x1 x2], y <- [min y1 y2 .. max y1 y2]]
 
-countAdditions :: (a -> Maybe a) -> a -> Int
-countAdditions = go 0
-  where
-    go n f x = case f x of
-      Nothing -> n
-      Just x' -> go (n + 1) f x'
+dropSands :: Int -> Map (Int, Int) Char -> [(Int, Int)]
+dropSands maxY grid = map snd $ iterate (\(m, _) -> dropSand maxY m) $ dropSand maxY grid
 
-addSand :: Int -> ((Int, Int) -> Bool) -> Map (Int, Int) Char -> Maybe (Map (Int, Int) Char)
-addSand floorY endCond grid
-  | endCond finalPos = Nothing
-  | otherwise = Just $ Map.insert finalPos 'o' grid
+dropSand :: Int -> Map (Int, Int) Char -> (Map (Int, Int) Char, (Int, Int))
+dropSand maxY grid = (Map.insert finalPos 'o' grid, finalPos)
   where
-    trail = iterate moveDown sandSource
-    finalPos = fst $ head $ dropWhile (uncurry (/=)) $ zip trail (tail trail)
+    finalPos = untilSame moveDown sandSource
     moveDown p
-      | snd p + 1 == floorY = p
+      | snd p == maxY = p
       | not $ Map.member down grid = down
       | not $ Map.member downLeft grid = downLeft
       | not $ Map.member downRight grid = downRight
@@ -66,10 +50,9 @@ addSand floorY endCond grid
         downLeft = p |+| (-1, 1)
         downRight = p |+| (1, 1)
 
--- For visualization
-formatGrid :: [[(Int, Int)]] -> Map (Int, Int) Char -> String
-formatGrid lines matrix = unlines $ chunksOf (xmax - xmin + 1) points
+untilSame :: (Eq a) => (a -> a) -> a -> a
+untilSame f x
+  | x == x' = x
+  | otherwise = untilSame f x'
   where
-    matrix' = Map.insert sandSource '+' matrix
-    ((xmin, xmax), (_, ymax)) = getBounds lines
-    points = [fromMaybe ' ' (Map.lookup (x, y) matrix') | y <- [0 .. ymax], x <- [xmin .. xmax]]
+    x' = f x

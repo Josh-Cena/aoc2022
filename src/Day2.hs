@@ -1,5 +1,6 @@
-module Day2(solve1, solve2) where
-import Data.List
+module Day2 (solve1, solve2) where
+
+import Data.List (find)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Utils

@@ -1,7 +1,7 @@
-module Day11(solve1, solve2) where
+module Day11 (solve1, solve2) where
 
 import Data.Char
-import Data.List
+import Data.List (foldl', sortOn)
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Ord
@@ -53,27 +53,24 @@ parseMonkey text =
     readAfter prefix = readT . dropPrefix prefix
 
 monkeyInspect :: Monkey -> (Int, Int) -> Int -> (Int, Int)
-monkeyInspect (Monkey {operation, test, target1, target2}) (relief, divisor) item = case item' `mod` test of
-  0 -> (target1, item')
-  _ -> (target2, item')
+monkeyInspect (Monkey {operation, test, target1, target2}) (relief, divisor) item = (target, item')
   where
     item' = operation item `div` relief `mod` divisor
+    target = if item' `mod` test == 0 then target1 else target2
 
 monkeyDoRound :: (Int, Int) -> Map Int Monkey -> Int -> Map Int Monkey
 monkeyDoRound reducer monkeys k = updateSelf $ foldr throwToTarget monkeys targets
   where
-    monkey = monkeys ! k
+    monkey = monkeys Map.! k
     targets = map (monkeyInspect monkey reducer) $ items monkey
     updateSelf = Map.adjust (\m -> m {items = [], inspectTimes = inspectTimes m + length targets}) k
     throwToTarget (target, item) = Map.adjust (\m -> m {items = item : items m}) target
 
-doRound :: (Int, Int) -> Map Int Monkey -> Map Int Monkey
-doRound reducer monkeys = foldl' (monkeyDoRound reducer) monkeys (Map.keys monkeys)
-
 passAround :: Int -> Int -> Map Int Monkey -> Map Int Monkey
-passAround rounds relief monkeys = foldr (const $ doRound (relief, divisor)) monkeys [1 .. rounds]
+passAround rounds relief monkeys = foldr ($) monkeys $ replicate rounds $ doRound (relief, divisor)
   where
-    divisor = Map.foldr (lcm . test) 1 monkeys
+    divisor = Map.foldr ((*) . test) 1 monkeys
+    doRound reducer monkeys = foldl' (monkeyDoRound reducer) monkeys (Map.keys monkeys)
 
 monkeyBusiness :: Map Int Monkey -> Int
 monkeyBusiness monkeys = fst * snd

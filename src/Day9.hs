@@ -1,5 +1,6 @@
-module Day9(solve1, solve2) where
-import Data.List
+module Day9 (solve1, solve2) where
+
+import Data.List (foldl', mapAccumL)
 import Data.Ord
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -19,28 +20,38 @@ solve2 input = do
   let (_, set2) = foldl' makeMove (replicate 10 (0, 0), Set.empty) moves
   print $ Set.size set2
 
-parseMove :: Text -> (Char, Int)
-parseMove t = (T.head fst, readT snd)
+parseMove :: Text -> ((Int, Int), Int)
+parseMove t = (charToDir $ T.head fst, readT snd)
   where
     [fst, snd] = T.words t
 
+charToDir :: Char -> (Int, Int)
+charToDir 'U' = (0, 1)
+charToDir 'D' = (0, -1)
+charToDir 'L' = (-1, 0)
+charToDir 'R' = (1, 0)
+charToDir _ = error "Invalid direction"
+
 type State = ([(Int, Int)], Set (Int, Int))
 
-makeMove :: State -> (Char, Int) -> State
+makeMove :: State -> ((Int, Int), Int) -> State
 makeMove s (_, 0) = s
-makeMove (chain, set) (dir, count) = makeMove (chain', Set.insert (head chain') set) (dir, count - 1)
+makeMove (chainHead : rest, set) (dir, count) =
+  makeMove (chainHead' : chain', Set.insert chainTail' set) (dir, count - 1)
   where
-    (rest, chainHead) = unsnoc chain
-    chainHead' = case dir of
-      'U' -> chainHead |+| (0, 1)
-      'D' -> chainHead |+| (0, -1)
-      'L' -> chainHead |+| (-1, 0)
-      'R' -> chainHead |+| (1, 0)
-      _ -> error "Invalid direction"
-    chain' = foldr (\seg moved -> moveTail seg (head moved) : moved) [chainHead'] rest
+    chainHead' = chainHead |+| dir
+    (chainTail', chain') =
+      mapAccumL
+        ( \prev cur ->
+            let cur' = moveTail prev cur in (cur', cur')
+        )
+        chainHead'
+        rest
+makeMove _ _ = error "Invalid state"
 
-    moveTail t h'
-      | max (abs dx) (abs dy) < 2 = t
-      | otherwise = t |+| (clamp (-1, 1) dx, clamp (-1, 1) dy)
-      where
-        (dx, dy) = h' |-| t
+moveTail :: (Int, Int) -> (Int, Int) -> (Int, Int)
+moveTail h' t
+  | max (abs dx) (abs dy) < 2 = t
+  | otherwise = t |+| (clamp (-1, 1) dx, clamp (-1, 1) dy)
+  where
+    (dx, dy) = h' |-| t

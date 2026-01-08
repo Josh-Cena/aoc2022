@@ -1,4 +1,5 @@
-module Day3(solve1, solve2) where
+module Day3 (solve1, solve2) where
+
 import Data.Char
 import Data.Set (Set)
 import Data.Set qualified as Set

@@ -1,4 +1,5 @@
-module Day4(solve1, solve2) where
+module Day4 (solve1, solve2) where
+
 import Data.Text (Text)
 import Data.Text qualified as T
 import GHC.Utils.Misc

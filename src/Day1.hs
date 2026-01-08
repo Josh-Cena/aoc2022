@@ -1,6 +1,7 @@
-module Day1(solve1, solve2) where
-import Data.List
-import Data.Ord
+module Day1 (solve1, solve2) where
+
+import Data.List (sortOn)
+import Data.Ord (Down (..))
 import Data.Text (Text)
 import Data.Text qualified as T
 import Utils
@@ -18,4 +19,4 @@ solve2 input = do
 getTops :: [Text] -> [Int]
 getTops input = sortOn Down tops
   where
-    tops = map (sumMap (read . T.unpack) . T.lines) $ splitT "\n\n" $ T.unlines input
+    tops = map (sumMap readT . T.lines) $ splitT "\n\n" $ T.unlines input
