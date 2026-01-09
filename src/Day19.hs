@@ -20,12 +20,11 @@ data State = State
     oreBots :: Int,
     clayBots :: Int,
     obsidianBots :: Int,
-    geodeBots :: Int,
     time :: Int
   }
-  deriving (Show)
+  deriving (Show, Eq, Ord)
 
-data BotType = Ore | Clay | Obsidian | Geode
+data BotType = Ore | Clay | Obsidian | Geode deriving (Show, Eq)
 
 initState :: State
 initState =
@@ -37,7 +36,6 @@ initState =
       oreBots = 1,
       clayBots = 0,
       obsidianBots = 0,
-      geodeBots = 0,
       time = 0
     }
 
@@ -65,17 +63,6 @@ parseBlueprint line =
     words = T.words line
     getNum pos = readT (words !! pos)
 
--- Run the state forward for dur minutes, not building any bots.
-runFor :: Int -> State -> State
-runFor dur st =
-  st
-    { ore = ore st + oreBots st * dur,
-      clay = clay st + clayBots st * dur,
-      obsidian = obsidian st + obsidianBots st * dur,
-      geode = geode st + geodeBots st * dur,
-      time = time st + dur
-    }
-
 ceilDiv :: Int -> Int -> Int
 ceilDiv a b = (a + b - 1) `div` b
 
@@ -100,8 +87,8 @@ timeToBuildBot Geode bp st =
       durObsidian = timeToMeetReq obsidianSpent (obsidian st) (obsidianBots st) + 1
    in max durOre durObsidian
 
-buildBot :: BotType -> Blueprint -> State -> State
-buildBot ty bp st = case ty of
+buildBot :: Int -> Blueprint -> State -> BotType -> State
+buildBot t bp st ty = case ty of
   Ore -> st' {oreBots = oreBots st' + 1, ore = ore st' - oreReq bp}
   Clay -> st' {clayBots = clayBots st' + 1, ore = ore st' - clayReq bp}
   Obsidian ->
@@ -114,35 +101,47 @@ buildBot ty bp st = case ty of
   Geode ->
     let (oreSpent, obsidianSpent) = geodeReq bp
      in st'
-          { geodeBots = geodeBots st' + 1,
+          { obsidian = obsidian st' - obsidianSpent,
             ore = ore st' - oreSpent,
-            obsidian = obsidian st' - obsidianSpent
+            geode = geode st' + t - time st' -- Immediately mine all geodes
           }
   where
     dur = timeToBuildBot ty bp st
-    st' = runFor dur st
+    -- Run the state forward for dur minutes, not building any bots.
+    st' =
+      st
+        { ore = ore st + oreBots st * dur,
+          clay = clay st + clayBots st * dur,
+          obsidian = obsidian st + obsidianBots st * dur,
+          time = time st + dur
+        }
 
-maxOreReq :: Blueprint -> Int
-maxOreReq bp = maximum [oreReq bp, clayReq bp, fst (obsidianReq bp), fst (geodeReq bp)]
-
-canBuildBot :: BotType -> Int -> Blueprint -> State -> Bool
+canBuildBot :: Int -> Blueprint -> State -> BotType -> Bool
 -- 1. We can't build a bot if we have no bots producing its required resources.
 -- 2. We don't need to build more bots than the maximum required resources per
 -- minute, because we can only spend that many resources per minute.
 -- 3. We can't build a bot if we don't have enough time to build it.
-canBuildBot ty t bp st = hasBot && needsMore && hasTime
+canBuildBot t bp st ty = hasBot && hasTime && needsMore
   where
     hasBot = case ty of
       Ore -> True
       Clay -> True
       Obsidian -> clayBots st > 0
       Geode -> obsidianBots st > 0
+    hasTime = timeToBuildBot ty bp st + time st < t
+    maxOreReq = maximum [oreReq bp, clayReq bp, fst (obsidianReq bp), fst (geodeReq bp)]
     needsMore = case ty of
-      Ore -> oreBots st < maxOreReq bp
+      Ore -> oreBots st < maxOreReq
       Clay -> clayBots st < snd (obsidianReq bp)
       Obsidian -> obsidianBots st < snd (geodeReq bp)
       Geode -> True
-    hasTime = timeToBuildBot ty bp st + time st <= t
+
+-- We can at most build one geode bot per minute, so if we have t minutes left
+-- we can at most build t - 1 geode bots, each producing 1, 2, ..., t - 1 geodes.
+geodesLeftUpperBound :: Int -> State -> Int
+geodesLeftUpperBound t st =
+  let timeLeft = t - time st
+   in timeLeft * (timeLeft - 1) `div` 2
 
 bestOutput :: Int -> Blueprint -> Int
 bestOutput t bp = go 0 [initState]
@@ -150,12 +149,15 @@ bestOutput t bp = go 0 [initState]
     go :: Int -> [State] -> Int
     go best [] = best
     go best (st : stk)
-      | time st > t = go best stk
-      | time st == t = go (max best (geode st)) stk
-      | otherwise =
-          let curT = time st
-              bots = [Ore, Clay, Obsidian, Geode]
-              moves = [buildBot ty bp | ty <- bots, canBuildBot ty t bp st]
-              moves' = runFor (t - curT) : moves
-              stk' = foldr (\f acc -> f st : acc) stk moves'
-           in go best stk'
+      -- If can never beat the best, skip this branch.
+      | geode st + geodesLeftUpperBound t st <= best = go best stk
+      -- If can't build any bots, tally the score.
+      | null nextStates = go (max best (geode st)) stk
+      | otherwise = go best stk'
+      where
+        nextStates =
+          [ buildBot t bp st bot
+            | bot <- [Ore, Clay, Obsidian, Geode],
+              canBuildBot t bp st bot
+          ]
+        stk' = nextStates ++ stk

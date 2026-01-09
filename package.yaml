@@ -29,6 +29,7 @@ executables:
     - -rtsopts
     - -with-rtsopts=-N
     default-extensions:
+    - BangPatterns
     - ImportQualifiedPost
     - MultiWayIf
     - NamedFieldPuns

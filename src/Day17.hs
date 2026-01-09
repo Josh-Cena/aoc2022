@@ -87,14 +87,14 @@ solve1 :: [Text] -> IO ()
 solve1 input = do
   let winds = cycle $ zip [0 ..] $ T.unpack $ head input
   let blocks = cycle $ zip [0 ..] [block1, block2, block3, block4, block5]
-  let result = dropBlocks 0 Set.empty winds blocks (-1) Map.empty Map.empty 2022
+  let result = dropBlocks 0 Set.empty winds blocks 0 Map.empty Map.empty 2022
   print result
 
 solve2 :: [Text] -> IO ()
 solve2 input = do
   let winds = cycle $ zip [0 ..] $ T.unpack $ head input
   let blocks = cycle $ zip [0 ..] [block1, block2, block3, block4, block5]
-  let result = dropBlocks 0 Set.empty winds blocks (-1) Map.empty Map.empty 1_000_000_000_000
+  let result = dropBlocks 0 Set.empty winds blocks 0 Map.empty Map.empty 1_000_000_000_000
   print result
 
 neighbors2d :: (Int, Int) -> [(Int, Int)]
@@ -109,9 +109,9 @@ unfilledTop board height = bfs (Seq.singleton start) (Set.singleton start)
     bfs :: Seq (Int, Int) -> Set (Int, Int) -> Set (Int, Int)
     bfs Seq.Empty seen = seen
     bfs (p Seq.:<| q) seen =
-      let next = [n | n <- neighbors2d p, inBox n, n `Set.notMember` board, n `Set.notMember` seen]
+      let next = [n | n <- neighbors2d p, inBox n, Set.notMember n board, Set.notMember n seen]
           seen' = foldr Set.insert seen next
-          q' = q <> Seq.fromList next
+          q' = q Seq.>< Seq.fromList next
        in bfs q' seen'
 
 dropBlocks ::
@@ -125,27 +125,26 @@ dropBlocks ::
   Int ->
   Int
 dropBlocks _ _ _ [] _ _ _ _ = error "Ran out of blocks"
-dropBlocks blocksDropped board windSeq ((blockIndex, blockTemplate) : blocksTail) top seenStates heights target
-  | blocksDropped == target = top + 1
+dropBlocks blocksDropped board windSeq ((blockIndex, blockTemplate) : blocksTail) height seenStates heights target
+  | blocksDropped == target = height
   | otherwise =
       let windSeqPos = fst (head windSeq)
-          emptyTop = unfilledTop board (top + 1)
-          state = (blockIndex, windSeqPos, Set.map (\(x, y) -> (x, y - top)) emptyTop)
+          emptyTop = unfilledTop board height
+          state = (blockIndex, windSeqPos, Set.map (\(x, y) -> (x, y - height)) emptyTop)
        in case Map.lookup state seenStates of
             Nothing ->
               let seenStates' = Map.insert state blocksDropped seenStates
-                  heights' = Map.insert blocksDropped (top + 1) heights
+                  heights' = Map.insert blocksDropped height heights
                   -- Drop the next block
-                  blockPos = top + 4
-                  block = map (|+| (2, blockPos)) blockTemplate
+                  block = map (|+| (2, height + 3)) blockTemplate
                   (block', windSeq') = dropBlock board block windSeq
                   board' = Set.union board (Set.fromList block')
-                  top' = max top $ snd $ head block'
-               in dropBlocks (blocksDropped + 1) board' windSeq' blocksTail top' seenStates' heights' target
+                  height' = max height $ snd (head block') + 1
+               in dropBlocks (blocksDropped + 1) board' windSeq' blocksTail height' seenStates' heights' target
             Just cycleStart ->
               let cycleLen = blocksDropped - cycleStart
                   cycleStartHeight = heights Map.! cycleStart
-                  cycleHeight = top + 1 - cycleStartHeight
+                  cycleHeight = height - cycleStartHeight
                   inCycle = target - cycleStart
                   numCycles = inCycle `div` cycleLen
                   remainder = inCycle `mod` cycleLen

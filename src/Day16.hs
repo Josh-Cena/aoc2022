@@ -1,84 +1,102 @@
 module Day16 (solve1, solve2) where
 
-import Data.Bifunctor (bimap, first)
-import Data.List (find, foldl', sortBy)
+import Data.Bifunctor (second)
+import Data.Bits
+import Data.Function ((&))
 import Data.Map (Map)
 import Data.Map qualified as Map
 import Data.Sequence qualified as Seq
-import Data.Set qualified as Set
 import Data.Text (Text)
 import Data.Text qualified as T
 import Utils
 
 solve1 :: [Text] -> IO ()
 solve1 input = do
-  let graph = Map.fromList $ map parseLine input
-  let meaningfulFlows = Map.map fst $ Map.filter (\(flow, _) -> flow > 0) graph
-  let distMap = Map.unions $ map (distance graph) (Map.keys graph)
-  let meaningfulDistMap = Map.filterWithKey (\(a, b) _ -> (a == T.pack "AA" || Map.member a meaningfulFlows) && Map.member b meaningfulFlows && a /= b) distMap
-  let meaningfulDistMap' = transformDist meaningfulDistMap
-  let paths = allPaths meaningfulDistMap' meaningfulFlows 30
-  print $ maximum $ map snd paths
+  let fullGraph = Map.fromList $ map parseLine input
+  let graph = reduceGraph fullGraph
+  let paths = allPaths graph 30
+  print $ Map.foldr max 0 paths
 
 solve2 :: [Text] -> IO ()
 solve2 input = do
-  let graph = Map.fromList $ map parseLine input
-  let meaningfulFlows = Map.map fst $ Map.filter (\(flow, _) -> flow > 0) graph
-  let distMap = Map.unions $ map (distance graph) (Map.keys graph)
-  let meaningfulDistMap = Map.filterWithKey (\(a, b) _ -> (a == T.pack "AA" || Map.member a meaningfulFlows) && Map.member b meaningfulFlows && a /= b) distMap
-  let meaningfulDistMap' = transformDist meaningfulDistMap
-  let paths = sortBy (\(_, s1) (_, s2) -> compare s2 s1) $ map (first Set.fromList) $ allPaths meaningfulDistMap' meaningfulFlows 26
-  -- Not very efficient because it's O(n^2) where n ~ 60k but works
-  print $ foldl' (\curMax (p1, s1) -> max curMax $ maybe 0 ((+) s1 . snd) $ find (\(p2, s2) -> s1 + s2 > curMax && Set.disjoint p1 p2) paths) 0 paths
+  let fullGraph = Map.fromList $ map parseLine input
+  let graph = reduceGraph fullGraph
+  let paths = allPaths graph 26
+  print $
+    maximum
+      [ r1 + r2
+        | (s1, r1) <- Map.toList paths,
+          (s2, r2) <- Map.toList paths,
+          disjoint s1 s2
+      ]
 
 parseLine :: Text -> (Text, (Int, [Text]))
-parseLine line = (lbl, (flow, nodes))
+parseLine line = (lblText, (flow, nodes))
   where
-    [part1, part2] = case T.splitOn (T.pack "; tunnels lead to valves ") line of
+    [part1, part2] = case splitT "; tunnels lead to valves " line of
       [a, b] -> [a, b]
-      _ -> T.splitOn (T.pack "; tunnel leads to valve ") line
-    [lblText, flowText] = T.splitOn (T.pack " has flow rate=") $ T.drop (T.length (T.pack "Valve ")) part1
-    lbl = lblText
+      _ -> splitT "; tunnel leads to valve " line
+    [lblText, flowText] = splitT " has flow rate=" $ T.drop (length "Valve ") part1
     flow = readT flowText
-    nodes = T.splitOn (T.pack ", ") part2
+    nodes = splitT ", " part2
 
-distance :: Map Text (Int, [Text]) -> Text -> Map (Text, Text) Int
-distance graph start = go (Map.singleton (start, start) 0) (Seq.singleton start)
-  where
-    go dist Seq.Empty = dist
-    go dist (node Seq.:<| queue) =
-      let (_, neighbors) = graph Map.! node
-          d = dist Map.! (start, node)
-          unvisitedNeighbors = filter (\n -> Map.notMember (start, n) dist) neighbors
-          newDist = foldl (\acc neighbor -> Map.insert (start, neighbor) (d + 1) acc) dist unvisitedNeighbors
-          newQueue = foldl (Seq.|>) queue unvisitedNeighbors
-       in go newDist newQueue
+newtype Node = Node Int deriving (Eq, Ord, Show)
 
-transformDist :: Map (Text, Text) Int -> Map Text (Map Text Int)
-transformDist = Map.foldlWithKey' insertDist Map.empty
-  where
-    insertDist acc (a, b) d =
-      let innerMap = Map.findWithDefault Map.empty a acc
-          updatedInnerMap = Map.insert b d innerMap
-       in Map.insert a updatedInnerMap acc
+-- "AA" is the smallest node, so it's 1 << 0
+startNode :: Node
+startNode = Node 1
 
-allPaths :: Map Text (Map Text Int) -> Map Text Int -> Int -> [([Text], Int)]
-allPaths distMap flows time = go (T.pack "AA") time Set.empty
+newtype NodeSet = NodeSet Int deriving (Eq, Ord, Show)
+
+singleton :: Node -> NodeSet
+singleton (Node n) = NodeSet n
+
+insert :: Node -> NodeSet -> NodeSet
+insert (Node n) (NodeSet s) = NodeSet (s .|. n)
+
+notMember :: Node -> NodeSet -> Bool
+notMember (Node n) (NodeSet s) = (s .&. n) == 0
+
+disjoint :: NodeSet -> NodeSet -> Bool
+disjoint (NodeSet s1) (NodeSet s2) = (s1 .&. s2) == 0
+
+distance :: Map Node (Int, [Node]) -> Node -> Map Node Int
+distance graph start =
+  go Map.empty (singleton start) (Seq.singleton (start, 0))
   where
-    -- state: current node, time left, opened valves
-    -- current node is the last opened valve
-    go :: Text -> Int -> Set.Set Text -> [([Text], Int)]
-    go current timeLeft opened =
-      let neighbors = distMap Map.! current
-          possibleTargets = Map.toList $ Map.filterWithKey (\k dist -> Set.notMember k opened && dist < timeLeft - 1) neighbors
-          paths =
-            concatMap
-              ( \(tgt, dist) ->
-                  let newOpened = Set.insert tgt opened
-                      timeAfterMoveAndOpen = timeLeft - dist - 1
-                      rewardFromThisMove = (flows Map.! tgt) * timeAfterMoveAndOpen
-                      choicesFromRest = go tgt timeAfterMoveAndOpen newOpened
-                   in map (bimap (tgt :) (rewardFromThisMove +)) choicesFromRest
-              )
-              possibleTargets
-       in ([], 0) : paths
+    go dist _ Seq.Empty = dist
+    go dist visited ((node, d) Seq.:<| queue) =
+      let (flow, neighbors) = second (filter (`notMember` visited)) $ graph Map.! node
+          dist' = if flow > 0 then Map.insert node d dist else dist
+          visited' = foldr insert visited neighbors
+          queue' = queue Seq.>< Seq.fromList (map (,d + 1) neighbors)
+       in go dist' visited' queue'
+
+-- Converts nodes to 1-hot encoding so we can use bitsets later
+reduceGraph :: Map Text (Int, [Text]) -> Map Node (Int, Map Node Int)
+reduceGraph fullGraph =
+  encodedGraph
+    & Map.filterWithKey (\k (f, _) -> k == startNode || f > 0)
+    & Map.mapWithKey (\k (f, _) -> (f, distance encodedGraph k))
+  where
+    nodeMap = Map.fromList $ zip (Map.keys fullGraph) [Node (1 `shiftL` i) | i <- [0 ..]]
+    toNode k = nodeMap Map.! k
+    encodedGraph = Map.map (second (map toNode)) fullGraph & Map.mapKeys toNode
+
+allPaths :: Map Node (Int, Map Node Int) -> Int -> Map NodeSet Int
+allPaths graph time = go [(startNode, time, NodeSet 0, 0)] Map.empty
+  where
+    go :: [(Node, Int, NodeSet, Int)] -> Map NodeSet Int -> Map NodeSet Int
+    go [] rewards = rewards
+    go ((current, timeLeft, opened, prevReward) : rest) rewards =
+      let (flow, neighbors) = graph Map.! current
+          reward = prevReward + flow * timeLeft
+          rewards' = Map.insertWith max opened reward rewards
+          nextStates =
+            [ (tgt, timeAfter, insert tgt opened, reward)
+              | (tgt, dist) <- Map.toList neighbors,
+                notMember tgt opened,
+                let timeAfter = timeLeft - dist - 1,
+                timeAfter > 0
+            ]
+       in go (nextStates ++ rest) rewards'
