@@ -78,5 +78,5 @@ bfs board width height start (er, ec) =
       | otherwise =
           let next = [n | n <- neighbors s, canMoveTo board width height n, n `Set.notMember` seen]
               seen' = foldr Set.insert seen next
-              q' = q <> Seq.fromList next
+              q' = q Seq.>< Seq.fromList next
            in go q' seen'

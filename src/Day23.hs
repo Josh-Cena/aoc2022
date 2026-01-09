@@ -1,6 +1,8 @@
 module Day23 (solve1, solve2) where
 
+import Data.List (find, mapAccumL)
 import Data.Map qualified as Map
+import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
 import Data.Text (Text)
@@ -45,32 +47,41 @@ canMove elves (r, c) (dr, dc) = not $ any (`Set.member` elves) positions
       _ -> error "Invalid direction"
 
 proposeMove :: Set (Int, Int) -> [(Int, Int)] -> (Int, Int) -> (Int, Int)
-proposeMove elves directions (r, c) = if not hasNeighbor then (r, c) else (r + dr, c + dc)
+proposeMove elves directions (r, c) =
+  if not hasNeighbor then (r, c) else (r + dr, c + dc)
   where
-    hasNeighbor = any (`Set.member` elves) [(r + dr, c + dc) | dr <- [-1 .. 1], dc <- [-1 .. 1], (dr, dc) /= (0, 0)]
-    (dr, dc) = case filter (canMove elves (r, c)) directions of
-      [] -> (0, 0)
-      (d : _) -> d
+    hasNeighbor =
+      any
+        (`Set.member` elves)
+        [ (r + dr, c + dc) | dr <- [-1 .. 1], dc <- [-1 .. 1], (dr, dc) /= (0, 0)
+        ]
+    (dr, dc) = fromMaybe (0, 0) $ find (canMove elves (r, c)) directions
 
-moveElves :: (Set (Int, Int), [(Int, Int)]) -> (Set (Int, Int), [(Int, Int)])
-moveElves (elves, directions) = (elves', directions')
+moveElves :: (Set (Int, Int), [(Int, Int)]) -> (Set (Int, Int), [(Int, Int)], Bool)
+moveElves (elves, directions) = (Set.fromList elves', directions', hasMoved)
   where
     proposals = [(pos, proposeMove elves directions pos) | pos <- Set.toList elves]
     moveCounts = foldr (\(_, pos') acc -> Map.insertWith (+) pos' 1 acc) Map.empty proposals
-    elves' =
-      Set.fromList
-        [ if Map.findWithDefault 0 pos' moveCounts > 1 then pos else pos'
-          | (pos, pos') <- proposals
-        ]
+    (hasMoved, elves') =
+      mapAccumL
+        ( \hasMoved (pos, pos') ->
+            if Map.findWithDefault 0 pos' moveCounts > 1
+              then (hasMoved, pos)
+              else (hasMoved || pos /= pos', pos')
+        )
+        False
+        proposals
     directions' = tail directions ++ [head directions]
 
 moveTimes :: Int -> (Set (Int, Int), [(Int, Int)]) -> (Set (Int, Int), [(Int, Int)])
 moveTimes 0 st = st
-moveTimes n st = moveTimes (n - 1) (moveElves st)
+moveTimes n st =
+  let (elves', directions', hasMoved) = moveElves st
+   in if hasMoved then moveTimes (n - 1) (elves', directions') else (elves', directions')
 
 findStable :: (Set (Int, Int), [(Int, Int)]) -> Int
 findStable = go 1
   where
     go n s =
-      let s' = moveElves s
-       in if fst s' == fst s then n else go (n + 1) s'
+      let (elves', directions', hasMoved) = moveElves s
+       in if not hasMoved then n else go (n + 1) (elves', directions')
