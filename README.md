@@ -1,7 +1,8 @@
 # Advent of Code 2022
 
-Language: ![Haskell](https://img.shields.io/badge/Haskell-5e5086?style=for-the-badge&logo=haskell&logoColor=white) (9.4.3)
-Package Manager: [Stack](https://docs.haskellstack.org/en/stable/)
+- Language: ![Haskell](https://img.shields.io/badge/Haskell-5e5086?style=for-the-badge&logo=haskell&logoColor=white) (9.4.3)
+- Package Manager: [Stack](https://docs.haskellstack.org/en/stable/)
+- [Writeup](https://joshcena.com/notes/aoc/)
 
 This repo uses my standard AoC setup. Inputs are stored as `inputs/day{n}/{name}.txt`. By default `name` is `real` (the real question). To run a specific day's solution, use the following command:
 
